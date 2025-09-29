@@ -2,6 +2,8 @@ using EduConnect_API.Repositories;
 using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Services;
 using EduConnect_API.Services.Interfaces;
+using EduConnect_API.Servicios;
+using EduConnect_API.Servicios.Interfaces;
 using EduConnect_API.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +18,8 @@ builder.Services.AddScoped<DbContextUtility>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<IUsuarioServicio, UsuarioServicio>();
+builder.Services.AddScoped<IUsuarioRepositorio, UsuarioRepositorio>();
 
 var app = builder.Build();
 

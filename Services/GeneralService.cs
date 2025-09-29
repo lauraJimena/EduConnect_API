@@ -1,4 +1,5 @@
 ﻿using EduConnect_API.Dtos;
+using EduConnect_API.Repositories;
 using EduConnect_API.Repositories.Interfaces;
 using System.Text.RegularExpressions;
 
@@ -65,6 +66,10 @@ namespace EduConnect_API.Services
 
             if (result <= 0)
                 throw new Exception("No se pudo registrar el usuario en la base de datos.");
+        }
+        public async Task<UsuarioRespuesta?> IniciarSesion(IniciarSesion dto)
+        {
+            return await _generalRepository.IniciarSesion(dto);
         }
     }
 }
