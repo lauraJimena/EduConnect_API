@@ -32,5 +32,17 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        [HttpPost("IniciarSesión")]
+        public async Task<IActionResult> IniciarSesion([FromBody] IniciarSesion dto)
+        {
+            var resultado = await _generalService.IniciarSesion(dto);
+
+            if (resultado == null)
+            {
+                return Unauthorized("Número de identificación o contraseña incorrectos.");
+            }
+
+            return Ok(resultado);
+        }
     }
 }

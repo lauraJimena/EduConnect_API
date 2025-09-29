@@ -1,11 +1,10 @@
-﻿using EduConnect_API.Dtos;
+﻿using System.Threading.Tasks;
+using EduConnect_API.Dtos;
 
 namespace EduConnect_API.Repositories.Interfaces
 {
-    public interface IGeneralRepository
+    public interface IUsuarioRepositorio
     {
-        Task<int> RegistrarUsuario(CrearUsuarioDto usuario);
         Task<UsuarioRespuesta?> IniciarSesion(IniciarSesion dto);
-
     }
 }
