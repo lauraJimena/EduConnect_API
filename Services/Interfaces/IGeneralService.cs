@@ -2,9 +2,10 @@
 
 namespace EduConnect_API.Services.Interfaces
 {
-    public interface IGeneralService
+    public interface IGeneralService 
     {
         Task RegistrarUsuario(CrearUsuarioDto usuario);
-        Task<UsuarioRespuesta?> IniciarSesion(IniciarSesion dto);
+        Task<ObtenerUsuarioDto> IniciarSesion(IniciarSesionDto usuario);
+        
     }
 }
