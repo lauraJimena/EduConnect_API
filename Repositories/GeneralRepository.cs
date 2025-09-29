@@ -46,7 +46,7 @@ namespace EduConnect_API.Repositories
                 throw new Exception("Error al registrar el usuario en la base de datos: " + ex.Message);
             }
         }
-        public async Task<UsuarioRespuesta?> IniciarSesion(IniciarSesion dto)
+        public async Task<ObtenerUsuarioDto> IniciarSesion(IniciarSesionDto usuario)
         {
             const string sql = @"
                 SELECT id_usu, nom_usu, apel_usu, num_ident, correo_usu, id_rol, id_estado
@@ -56,13 +56,13 @@ namespace EduConnect_API.Repositories
             using var connection = _dbContextUtility.GetOpenConnection();
             using var command = new SqlCommand(sql, connection);
 
-            command.Parameters.AddWithValue("@num_ident", dto.NumIdent);
-            command.Parameters.AddWithValue("@contras_usu", dto.ContrasUsu);
+            command.Parameters.AddWithValue("@num_ident", usuario.NumIdent);
+            command.Parameters.AddWithValue("@contras_usu", usuario.ContrasUsu);
 
             using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
-                return new UsuarioRespuesta
+                return new ObtenerUsuarioDto
                 {
                     IdUsu = reader.GetInt32(0),
                     Nombre = reader.GetString(1),

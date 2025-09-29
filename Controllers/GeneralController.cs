@@ -33,16 +33,20 @@ namespace EduConnect_API.Controllers
             }
         }
         [HttpPost("IniciarSesión")]
-        public async Task<IActionResult> IniciarSesion([FromBody] IniciarSesion dto)
+        public async Task<IActionResult> IniciarSesion([FromBody] IniciarSesionDto usuario)
         {
-            var resultado = await _generalService.IniciarSesion(dto);
-
-            if (resultado == null)
+            try
             {
-                return Unauthorized("Número de identificación o contraseña incorrectos.");
-            }
+                var resultado = await _generalService.IniciarSesion(usuario);
 
-            return Ok(resultado);
+
+                return Ok(resultado);
+            
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
         }
     }
 }

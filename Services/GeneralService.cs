@@ -1,18 +1,19 @@
 ﻿using EduConnect_API.Dtos;
 using EduConnect_API.Repositories;
 using EduConnect_API.Repositories.Interfaces;
+using EduConnect_API.Services.Interfaces;
 using System.Text.RegularExpressions;
 
 namespace EduConnect_API.Services
 {
-    public class GeneralService
+    public class GeneralService : IGeneralService
     {
         private readonly IGeneralRepository _generalRepository;
 
         public GeneralService(IGeneralRepository generalRepository)
         {
             _generalRepository = generalRepository;
-        } 
+        }
         public async Task RegistrarUsuario(CrearUsuarioDto usuario)
         {
             //Validaciones básicas obligatorias
@@ -67,9 +68,29 @@ namespace EduConnect_API.Services
             if (result <= 0)
                 throw new Exception("No se pudo registrar el usuario en la base de datos.");
         }
-        public async Task<UsuarioRespuesta?> IniciarSesion(IniciarSesion dto)
+        public async Task<ObtenerUsuarioDto> IniciarSesion(IniciarSesionDto usuario)
         {
-            return await _generalRepository.IniciarSesion(dto);
+            if (string.IsNullOrWhiteSpace(usuario.NumIdent))
+                throw new Exception("El número de identificación es obligatorio.");
+            else if (!Regex.IsMatch(usuario.NumIdent, @"^\d{7,10}$"))
+                throw new Exception("El número de identificación que ingresaste no es válido.");
+
+            // Validación de contraseña
+            if (string.IsNullOrWhiteSpace(usuario.ContrasUsu))
+                throw new Exception("La contraseña es obligatoria.");
+           
+            // Consultar en BD
+            var result = await _generalRepository.IniciarSesion(usuario);
+
+            if (result == null)
+                throw new Exception("Número de identificación o contraseña incorrectos.");
+
+            if (result.IdEstado != 1) // Ejemplo: 1 = activo
+                throw new Exception("El usuario no está activo, contacte al administrador.");
+
+            return result;
+
         }
     }
+
 }

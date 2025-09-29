@@ -5,7 +5,7 @@ namespace EduConnect_API.Repositories.Interfaces
     public interface IGeneralRepository
     {
         Task<int> RegistrarUsuario(CrearUsuarioDto usuario);
-        Task<UsuarioRespuesta?> IniciarSesion(IniciarSesion dto);
+        Task<ObtenerUsuarioDto> IniciarSesion(IniciarSesionDto usuario);
 
     }
 }
