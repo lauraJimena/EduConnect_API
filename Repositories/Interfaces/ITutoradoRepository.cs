@@ -1,6 +1,10 @@
-﻿namespace EduConnect_API.Repositories.Interfaces
+﻿using EduConnect_API.Dtos;
+
+namespace EduConnect_API.Repositories.Interfaces
 {
-    public class ITutoradoRepository
+    public interface ITutoradoRepository
     {
+        Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialTutoradoAsync(int idTutorado);
     }
 }
+
