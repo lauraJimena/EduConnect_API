@@ -7,13 +7,15 @@ namespace EduConnect_API.Controllers
     [ApiController]
     public class TutorController : Controller
     {
-        private readonly ILogger<TutorController> _logger;
         private readonly ITutorService _tutorService;
-        public TutorController(ILogger<TutorController> logger, ITutorService tutorService)
-        {
-            _logger = logger;
-            _tutorService = tutorService;
-        }
+        public TutorController(ITutorService service) => _tutorService = service;
 
+        // GET api/tutor/{id}/historial
+        [HttpGet("{idTutor}/historial")]
+        public async Task<IActionResult> ObtenerHistorialTutor(int idTutor)
+        {
+            var datos = await _tutorService.ObtenerHistorialAsync(idTutor);
+            return Ok(datos);
+        }
     }
 }

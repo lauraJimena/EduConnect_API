@@ -1,4 +1,6 @@
-﻿using EduConnect_API.Services.Interfaces;
+﻿using EduConnect_API.Controllers;
+using EduConnect_API.Services;
+using EduConnect_API.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EduConnect_API.Controllers
@@ -7,12 +9,16 @@ namespace EduConnect_API.Controllers
     [ApiController]
     public class TutoradoController : Controller
     {
-        private readonly ILogger<TutoradoController> _logger;
         private readonly ITutoradoService _tutoradoService;
-        public TutoradoController(ILogger<TutoradoController> logger, ITutoradoService tutoradoService)
+
+        public TutoradoController(ITutoradoService tutoradoService) => _tutoradoService = tutoradoService;
+
+      // trae todas las tutorias del tutorado
+        [HttpGet("{idTutorado}/historial")]
+        public async Task<IActionResult> ObtenerHistorialTutorado(int idTutorado)
         {
-            _logger = logger;
-            _tutoradoService = tutoradoService;
+            var datos = await _tutoradoService.ObtenerHistorialAsync(idTutorado);
+            return Ok(datos); // devolverá [] si no hay coincidencias
         }
     }
 }
