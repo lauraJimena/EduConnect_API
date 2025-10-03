@@ -14,7 +14,10 @@ builder.Services.AddScoped<IGeneralService, GeneralService>();
 builder.Services.AddScoped<IGeneralRepository, GeneralRepository>();
 builder.Services.AddScoped<IAdministradorRepository, AdministradorRepository>();
 builder.Services.AddScoped<IAdministradorService, AdministradorService>();
-
+builder.Services.AddScoped<ITutoradoRepository, TutoradoRepository>();
+builder.Services.AddScoped<ITutoradoService, TutoradoService>();
+builder.Services.AddScoped<ITutorRepository, TutorRepository>();
+builder.Services.AddScoped<ITutorService, TutorService>();
 
 
 
