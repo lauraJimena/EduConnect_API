@@ -5,17 +5,17 @@ namespace EduConnect_API.Utilities
 {
     public class DbContextUtility
     {
-        static readonly string SERVER = "FELIPE_GARAVITO";
-        static readonly string DB_NAME = "EduConnect";
-
-        static readonly string Conn = $"Server={SERVER};Database={DB_NAME};Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;Encrypt=False;";
-
-        //static readonly string SERVER = "LAPTOP-8RV6USKP";
+        //static readonly string SERVER = "FELIPE_GARAVITO";
         //static readonly string DB_NAME = "EduConnect";
 
-        //static readonly string DB_USER = "sa"; 
-        //static readonly string DB_PASSWORD = "12345"; //cadena static
-        //static readonly string Conn = $"Server={SERVER};Database={DB_NAME};User Id={DB_USER};Password={DB_PASSWORD};MultipleActiveResultSets=true;TrustServerCertificate=True;Encrypt=True";
+        //static readonly string Conn = $"Server={SERVER};Database={DB_NAME};Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;Encrypt=False;";
+
+        static readonly string SERVER = "LAPTOP-8RV6USKP";
+        static readonly string DB_NAME = "EduConnect";
+
+        static readonly string DB_USER = "sa";
+        static readonly string DB_PASSWORD = "12345";
+        static readonly string Conn = $"Server={SERVER};Database={DB_NAME};User Id={DB_USER};Password={DB_PASSWORD};MultipleActiveResultSets=true;TrustServerCertificate=True;Encrypt=True";
 
         public SqlConnection GetOpenConnection()
         {

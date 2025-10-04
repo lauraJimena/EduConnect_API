@@ -15,51 +15,64 @@ namespace EduConnect_API.Repositories
 
         public async Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialTutoradoAsync(int idTutorado)
         {
+           
             var lista = new List<HistorialTutoriaDto>();
 
             const string sql = @"
-                SELECT id_tutoria, fecha, hora, id_modalidad, tema, comentario_adic, id_tutorado, id_tutor, id_materia, id_estado
-                FROM [EduConnect].[dbo].[tutoria]
-                WHERE id_tutorado = @idTutorado
-                ORDER BY fecha DESC, hora DESC;";
+                SELECT 
+            t.id_tutoria,
+            t.fecha,
+            t.hora,
+            t.id_modalidad,
+            t.tema,
+            t.comentario_adic,
+            t.id_tutorado,
+            t.id_tutor,
+            t.id_materia,
+            t.id_estado,
 
+            -- Textos relacionados
+            mo.nom_modalidad       AS modalidad_nombre,
+            ma.nom_materia       AS materia_nombre,
+            es.nom_estado      AS estado,
+            u.nom_usu       AS tutor_nombre,
+            u.apel_usu      AS tutor_apellido
+        FROM [EduConnect].[dbo].[tutoria] AS t
+        LEFT JOIN [EduConnect].[dbo].[modalidad]      AS mo ON mo.id_modalidad = t.id_modalidad
+        LEFT JOIN [EduConnect].[dbo].[materia]        AS ma ON ma.id_materia   = t.id_materia
+        LEFT JOIN [EduConnect].[dbo].[estado] AS es ON es.id_estado    = t.id_estado   -- ajusta el nombre de la tabla si es distinto
+        LEFT JOIN [EduConnect].[dbo].[usuario]        AS u  ON u.id_usu        = t.id_tutor 
+        WHERE t.id_tutorado = @idTutorado AND t.id_estado IN (3, 5, 6)
+        ORDER BY t.fecha DESC, t.hora DESC";
             using var connection = _dbContextUtility.GetOpenConnection();
             using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@idTutorado", idTutorado);
 
             using var reader = await command.ExecuteReaderAsync();
-            if (!reader.HasRows) return lista;
-
-            // Obtener ordinals UNA sola vez
-            var oIdTut = reader.GetOrdinal("id_tutoria");
-            var oFecha = reader.GetOrdinal("fecha");
-            var oHora = reader.GetOrdinal("hora");
-            var oIdModal = reader.GetOrdinal("id_modalidad");
-            var oTema = reader.GetOrdinal("tema");
-            var oComent = reader.GetOrdinal("comentario_adic");
-            var oIdTutorado = reader.GetOrdinal("id_tutorado");
-            var oIdTutor = reader.GetOrdinal("id_tutor");
-            var oIdMateria = reader.GetOrdinal("id_materia");
-            var oIdEstado = reader.GetOrdinal("id_estado");
-
             while (await reader.ReadAsync())
             {
                 var dto = new HistorialTutoriaDto
                 {
-                    IdTutoria = reader.IsDBNull(oIdTut) ? 0 : reader.GetInt32(oIdTut),
-                    Fecha = reader.IsDBNull(oFecha) ? DateTime.MinValue : reader.GetDateTime(oFecha),
-                    Hora = reader.IsDBNull(oHora) ? TimeSpan.Zero : reader.GetFieldValue<TimeSpan>(oHora),
-                    IdModalidad = reader.IsDBNull(oIdModal) ? (byte)0 : reader.GetByte(oIdModal),
-                    Tema = reader.IsDBNull(oTema) ? null : reader.GetString(oTema),
-                    ComentarioAdic = reader.IsDBNull(oComent) ? null : reader.GetString(oComent),
-                    IdTutorado = reader.IsDBNull(oIdTutorado) ? 0 : reader.GetInt32(oIdTutorado),
-                    IdTutor = reader.IsDBNull(oIdTutor) ? 0 : reader.GetInt32(oIdTutor),
-                    IdMateria = reader.IsDBNull(oIdMateria) ? 0 : reader.GetInt32(oIdMateria),
-                    IdEstado = reader.IsDBNull(oIdEstado) ? (byte)0 : reader.GetByte(oIdEstado)
+                    IdTutoria = reader.GetInt32(0),
+                    Fecha = reader.GetDateTime(1),
+                    Hora = reader.GetFieldValue<TimeSpan>(2),
+                    IdModalidad = reader.GetByte(3),
+                    Tema = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    ComentarioAdic = reader.IsDBNull(5) ? null : reader.GetString(5),
+                    IdTutorado = reader.GetInt32(6),
+                    IdTutor = reader.GetInt32(7),
+                    IdMateria = reader.GetInt32(8),
+                    IdEstado = reader.GetByte(9),
+                    ModalidadNombre = reader.IsDBNull(10) ? null : reader.GetString(10),
+                    MateriaNombre = reader.IsDBNull(11) ? null : reader.GetString(11),
+                    EstadoNombre = reader.IsDBNull(12) ? null : reader.GetString(12),
+                    TutorNombreCompleto = $"{(reader.IsDBNull(13) ? "" : reader.GetString(13))} {(reader.IsDBNull(14) ? "" : reader.GetString(14))}".Trim()
                 };
 
                 lista.Add(dto);
             }
+
+
 
             return lista;
         }
