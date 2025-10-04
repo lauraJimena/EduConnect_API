@@ -10,7 +10,9 @@ namespace EduConnect_API.Utilities
 
         //static readonly string Conn = $"Server={SERVER};Database={DB_NAME};Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;Encrypt=False;";
 
-        static readonly string SERVER = "LAPTOP-8RV6USKP";
+        //static readonly string SERVER = "LAPTOP-8RV6USKP";
+
+        static readonly string SERVER = "LAPTOP-CORO87NM";
         static readonly string DB_NAME = "EduConnect";
 
         static readonly string DB_USER = "sa";

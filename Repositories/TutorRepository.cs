@@ -2,6 +2,7 @@
 using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Utilities;
 using Microsoft.Data.SqlClient;
+using System.Data;
 namespace EduConnect_API.Repositories
 {
     public class TutorRepository : ITutorRepository
@@ -59,6 +60,62 @@ namespace EduConnect_API.Repositories
             }
 
             return lista;
+        }
+
+        public async Task<IEnumerable<ObtenerTutorDto>> ObtenerTutoresAsync(BuscarTutorDto filtros)
+        {
+            var lista = new List<ObtenerTutorDto>();
+
+            var sql = @"
+                SELECT
+                    u.id_usu                               AS IdUsuario,
+                    (u.nom_usu + ' ' + u.apel_usu)         AS TutorNombreCompleto,
+                    CAST(u.id_estado AS int)               AS IdEstado,
+                    m.nom_materia                          AS MateriaNombre,
+                    CAST(s.num_semestre AS nvarchar(10))   AS Semestre,
+                    c.nom_carrera                          AS CarreraNombre
+                FROM dbo.usuario u
+                JOIN dbo.tutor_materia tm ON tm.id_usu     = u.id_usu
+                JOIN dbo.materia       m  ON m.id_materia  = tm.id_materia
+                JOIN dbo.semestre      s  ON s.id_semestre = m.id_semestre
+                JOIN dbo.carrera       c  ON c.id_carrera  = m.id_carrera
+                WHERE
+                    u.id_rol = 1
+                    AND (@Nombre        IS NULL OR (u.nom_usu + ' ' + u.apel_usu) LIKE '%' + @Nombre + '%')
+                    AND (@MateriaNombre IS NULL OR m.nom_materia   LIKE '%' + @MateriaNombre + '%')
+                    AND (@Semestre      IS NULL OR s.num_semestre  LIKE '%' + @Semestre + '%')
+                    AND (@CarreraNombre IS NULL OR c.nom_carrera   LIKE '%' + @CarreraNombre + '%')
+                    AND (@IdEstado      IS NULL OR u.id_estado     = @IdEstado)
+                ORDER BY u.nom_usu, u.apel_usu, m.nom_materia;";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            if (connection.State != ConnectionState.Open)
+                await connection.OpenAsync();
+
+            using var command = new SqlCommand(sql, (SqlConnection)connection);
+
+            command.Parameters.AddWithValue("@Nombre", (object?)filtros.Nombre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@MateriaNombre", (object?)filtros.MateriaNombre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Semestre", (object?)filtros.Semestre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@CarreraNombre", (object?)filtros.CarreraNombre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@IdEstado", (object?)filtros.IdEstado ?? DBNull.Value);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                lista.Add(new ObtenerTutorDto
+                {
+                    IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
+                    TutorNombreCompleto = reader.GetString(reader.GetOrdinal("TutorNombreCompleto")),
+                    IdEstado = reader.GetInt32(reader.GetOrdinal("IdEstado")),
+                    MateriaNombre = reader.GetString(reader.GetOrdinal("MateriaNombre")),
+                    Semestre = reader.GetString(reader.GetOrdinal("Semestre")),
+                    CarreraNombre = reader.GetString(reader.GetOrdinal("CarreraNombre"))
+                });
+            }
+
+            return lista;
+
         }
     }
 }
