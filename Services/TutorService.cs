@@ -13,6 +13,9 @@ namespace EduConnect_API.Services
         public Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialAsync(int idTutor)
             => _tutorRepository.ObtenerHistorialTutorAsync(idTutor);
 
+        public Task<IEnumerable<ObtenerTutorDto>> ObtenerTutoresAsync(BuscarTutorDto filtros)
+            => _tutorRepository.ObtenerTutoresAsync(filtros);
+
 
     }
 }

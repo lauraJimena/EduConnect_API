@@ -5,6 +5,8 @@ namespace EduConnect_API.Services.Interfaces
     public interface ITutorService
     {
         Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialAsync(int idTutor);
+
+        Task<IEnumerable<ObtenerTutorDto>> ObtenerTutoresAsync(BuscarTutorDto filtros);
     }
 }
 
