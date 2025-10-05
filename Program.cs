@@ -18,6 +18,8 @@ builder.Services.AddScoped<ITutoradoRepository, TutoradoRepository>();
 builder.Services.AddScoped<ITutoradoService, TutoradoService>();
 builder.Services.AddScoped<ITutorRepository, TutorRepository>();
 builder.Services.AddScoped<ITutorService, TutorService>();
+builder.Services.AddScoped<IChatsService, ChatsService>();
+builder.Services.AddScoped<IChatsRepository, ChatsRepository>();
 
 
 

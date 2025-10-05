@@ -12,7 +12,7 @@ namespace EduConnect_API.Utilities
 
         //static readonly string SERVER = "LAPTOP-8RV6USKP";
 
-        static readonly string SERVER = "LAPTOP-CORO87NM";
+        static readonly string SERVER = "MOGEPC";
         static readonly string DB_NAME = "EduConnect";
 
         static readonly string DB_USER = "sa";
