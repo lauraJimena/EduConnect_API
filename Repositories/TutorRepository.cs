@@ -67,26 +67,26 @@ namespace EduConnect_API.Repositories
             var lista = new List<ObtenerTutorDto>();
 
             var sql = @"
-                SELECT
-                    u.id_usu                               AS IdUsuario,
-                    (u.nom_usu + ' ' + u.apel_usu)         AS TutorNombreCompleto,
-                    CAST(u.id_estado AS int)               AS IdEstado,
-                    m.nom_materia                          AS MateriaNombre,
-                    CAST(s.num_semestre AS nvarchar(10))   AS Semestre,
-                    c.nom_carrera                          AS CarreraNombre
-                FROM dbo.usuario u
-                JOIN dbo.tutor_materia tm ON tm.id_usu     = u.id_usu
-                JOIN dbo.materia       m  ON m.id_materia  = tm.id_materia
-                JOIN dbo.semestre      s  ON s.id_semestre = m.id_semestre
-                JOIN dbo.carrera       c  ON c.id_carrera  = m.id_carrera
-                WHERE
-                    u.id_rol = 1
-                    AND (@Nombre        IS NULL OR (u.nom_usu + ' ' + u.apel_usu) LIKE '%' + @Nombre + '%')
-                    AND (@MateriaNombre IS NULL OR m.nom_materia   LIKE '%' + @MateriaNombre + '%')
-                    AND (@Semestre      IS NULL OR s.num_semestre  LIKE '%' + @Semestre + '%')
-                    AND (@CarreraNombre IS NULL OR c.nom_carrera   LIKE '%' + @CarreraNombre + '%')
-                    AND (@IdEstado      IS NULL OR u.id_estado     = @IdEstado)
-                ORDER BY u.nom_usu, u.apel_usu, m.nom_materia;";
+               SELECT 
+    u.id_usu                               AS IdUsuario,
+    (u.nom_usu + ' ' + u.apel_usu)         AS TutorNombreCompleto,
+    CAST(u.id_estado AS int)               AS Estado,
+    m.nom_materia                          AS Materia,
+    s.num_semestre                         AS Semestre,
+    c.nom_carrera                          AS Carrera
+FROM dbo.usuario AS u
+INNER JOIN dbo.tutor_materia AS tm ON tm.id_usu     = u.id_usu
+INNER JOIN dbo.materia       AS m  ON m.id_materia  = tm.id_materia
+INNER JOIN dbo.semestre      AS s  ON s.id_semestre = m.id_semestre
+INNER JOIN dbo.carrera       AS c  ON c.id_carrera  = m.id_carrera
+WHERE
+    u.id_rol = 2
+    AND (NULLIF(@Nombre,  N'') IS NULL OR (u.nom_usu + ' ' + u.apel_usu) LIKE N'%' + @Nombre + N'%')
+    AND (NULLIF(@Materia, N'') IS NULL OR m.nom_materia  LIKE N'%' + @Materia + N'%')
+    AND (@Semestre IS NULL OR s.num_semestre = @Semestre)
+    AND (NULLIF(@Carrera, N'') IS NULL OR c.nom_carrera  LIKE N'%' + @Carrera + N'%')
+    AND (@Estado   IS NULL OR u.id_estado = @Estado)
+ORDER BY u.nom_usu, u.apel_usu, m.nom_materia;";
 
             using var connection = _dbContextUtility.GetOpenConnection();
             if (connection.State != ConnectionState.Open)
@@ -95,10 +95,10 @@ namespace EduConnect_API.Repositories
             using var command = new SqlCommand(sql, (SqlConnection)connection);
 
             command.Parameters.AddWithValue("@Nombre", (object?)filtros.Nombre ?? DBNull.Value);
-            command.Parameters.AddWithValue("@MateriaNombre", (object?)filtros.MateriaNombre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Materia", (object?)filtros.MateriaNombre ?? DBNull.Value);
             command.Parameters.AddWithValue("@Semestre", (object?)filtros.Semestre ?? DBNull.Value);
-            command.Parameters.AddWithValue("@CarreraNombre", (object?)filtros.CarreraNombre ?? DBNull.Value);
-            command.Parameters.AddWithValue("@IdEstado", (object?)filtros.IdEstado ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Carrera", (object?)filtros.CarreraNombre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Estado", (object?)filtros.IdEstado ?? DBNull.Value);
 
             using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -107,10 +107,10 @@ namespace EduConnect_API.Repositories
                 {
                     IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
                     TutorNombreCompleto = reader.GetString(reader.GetOrdinal("TutorNombreCompleto")),
-                    IdEstado = reader.GetInt32(reader.GetOrdinal("IdEstado")),
-                    MateriaNombre = reader.GetString(reader.GetOrdinal("MateriaNombre")),
-                    Semestre = reader.GetString(reader.GetOrdinal("Semestre")),
-                    CarreraNombre = reader.GetString(reader.GetOrdinal("CarreraNombre"))
+                    IdEstado = reader.GetInt32(reader.GetOrdinal("Estado")),
+                    MateriaNombre = reader.GetString(reader.GetOrdinal("Materia")),
+                    Semestre = reader.GetByte(reader.GetOrdinal("Semestre")),
+                    CarreraNombre = reader.GetString(reader.GetOrdinal("Carrera"))
                 });
             }
 

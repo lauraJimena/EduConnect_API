@@ -50,8 +50,26 @@ namespace EduConnect_API.Repositories
         {
             var usuarios = new List<ObtenerUsuarioDto>();
 
-            const string sql = @"SELECT id_usu, nom_usu, apel_usu, id_tipo_ident, num_ident, correo_usu, tel_usu, id_carrera, 
-                                id_semestre, id_rol, id_estado FROM [EduConnect].[dbo].[usuario]";
+            const string sql = @"SELECT 
+                                u.id_usu AS IdUsuario,
+                                u.nom_usu AS Nombre,
+                                u.apel_usu AS Apellido,
+                                ti.nombre AS TipoIdentificacion,
+                                u.num_ident AS NumeroIdentificacion,
+                                u.correo_usu AS Correo,
+                                u.tel_usu AS Telefono,
+                                c.nom_carrera AS Carrera,
+                                s.num_semestre AS Semestre,
+                                r.nom_rol AS Rol,
+                                e.nom_estado AS Estado
+                            FROM [EduConnect].[dbo].[usuario] AS u
+                            INNER JOIN [EduConnect].[dbo].[tipo_ident] AS ti ON u.id_tipo_ident = ti.id_tipo_ident
+                            INNER JOIN [EduConnect].[dbo].[carrera] AS c ON u.id_carrera = c.id_carrera
+                            INNER JOIN [EduConnect].[dbo].[semestre] AS s ON u.id_semestre = s.id_semestre
+                            INNER JOIN [EduConnect].[dbo].[rol] AS r ON u.id_rol = r.id_rol
+                            INNER JOIN [EduConnect].[dbo].[estado] AS e ON u.id_estado = e.id_estado
+                            ORDER BY u.nom_usu, u.apel_usu;
+                            ";
 
             using var connection = _dbContextUtility.GetOpenConnection();
             using var command = new SqlCommand(sql, connection);
@@ -64,14 +82,14 @@ namespace EduConnect_API.Repositories
                     IdUsu = reader.GetInt32(0),
                     Nombre = reader.GetString(1),                    
                     Apellido = reader.GetString(2),
-                    IdTipoIdent = reader.GetByte(3),
+                    TipoIdent= reader.GetString(3),
                     NumIdent = reader.GetString(4),
                     Correo = reader.GetString(5),
                     TelUsu = reader.GetString(6),
-                    IdCarrera = reader.IsDBNull(7) ? 0 : reader.GetInt16(7),
-                    IdSemestre = reader.IsDBNull(8) ? 0 : reader.GetByte(8),
-                    IdRol = reader.GetByte(9),
-                    IdEstado = reader.GetByte(10)
+                    Carrera = reader.GetString(7),
+                    IdSemestre = reader.GetByte(8),
+                    Rol = reader.GetString(9),
+                    Estado = reader.GetString(10)
 
 
                 });
@@ -82,18 +100,33 @@ namespace EduConnect_API.Repositories
         public async Task<ObtenerUsuarioDto?> ObtenerUsuarioPorId(int idUsuario)
         {
             const string sql = @"
-    SELECT id_usu, nom_usu, apel_usu, id_tipo_ident, num_ident, 
-           correo_usu, tel_usu, contras_usu, id_carrera, id_semestre, 
-           id_rol, id_estado
-    FROM [EduConnect].[dbo].[usuario]
-    WHERE id_usu = @idUsuario";
+                                 SELECT
+                                 u.id_usu AS IdUsu,
+                                    u.nom_usu AS Nombre,
+                                    u.apel_usu AS Apellido,
+                                    ti.nombre AS TipoIdentificacion,
+                                    u.num_ident AS NumeroIdentificacion,
+                                    u.correo_usu AS Correo,
+                                    u.tel_usu AS Telefono,
+                                    u.contras_usu AS Contrasena,
+                                    c.nom_carrera AS Carrera,
+                                    s.num_semestre AS Semestre,
+                                    r.nom_rol AS Rol,
+                                    e.nom_estado AS Estado
+                                FROM [EduConnect].[dbo].[usuario] AS u
+                                INNER JOIN [EduConnect].[dbo].[tipo_ident] AS ti ON u.id_tipo_ident = ti.id_tipo_ident
+                                INNER JOIN [EduConnect].[dbo].[carrera] AS c ON u.id_carrera = c.id_carrera
+                                INNER JOIN [EduConnect].[dbo].[semestre] AS s ON u.id_semestre = s.id_semestre
+                                INNER JOIN [EduConnect].[dbo].[rol] AS r ON u.id_rol = r.id_rol
+                                INNER JOIN [EduConnect].[dbo].[estado] AS e ON u.id_estado = e.id_estado
+                                WHERE u.id_usu = @idUsu";
 
             try
             {
                 using var connection = _dbContextUtility.GetOpenConnection();
                 using var command = new SqlCommand(sql, connection);
 
-                command.Parameters.AddWithValue("@idUsuario", idUsuario);
+                command.Parameters.AddWithValue("@idUsu", idUsuario);
 
                 using var reader = await command.ExecuteReaderAsync();
                 if (await reader.ReadAsync())
@@ -103,15 +136,15 @@ namespace EduConnect_API.Repositories
                         IdUsu = reader.GetInt32(0),
                         Nombre = reader.GetString(1),
                         Apellido = reader.GetString(2),
-                        IdTipoIdent = reader.GetByte(3),
+                        TipoIdent = reader.GetString(3),
                         NumIdent = reader.GetString(4),
                         Correo = reader.GetString(5),
                         TelUsu = reader.GetString(6),
                         ContrasUsu = reader.GetString(7),
-                        IdCarrera = reader.GetInt16(8),
+                        Carrera = reader.GetString(8),
                         IdSemestre = reader.GetByte(9),
-                        IdRol = reader.GetByte(10),
-                        IdEstado = reader.GetByte(11)
+                        Rol = reader.GetString(10),
+                        Estado = reader.GetString(11)
                     };
                 }
                 return null;
