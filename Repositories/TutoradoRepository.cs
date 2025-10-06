@@ -2,6 +2,8 @@
 using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Utilities;
 using Microsoft.Data.SqlClient;
+using System.Text;
+
 namespace EduConnect_API.Repositories
 {
     public class TutoradoRepository : ITutoradoRepository
@@ -13,40 +15,64 @@ namespace EduConnect_API.Repositories
             _dbContextUtility = dbContextUtility ?? throw new ArgumentNullException(nameof(dbContextUtility));
         }
 
-        public async Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialTutoradoAsync(int idTutorado)
+        public async Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialTutoradoAsync(int idTutorado, List<int>? idsEstado)
         {
-           
             var lista = new List<HistorialTutoriaDto>();
 
-            const string sql = @"
+            var sqlBuilder = new StringBuilder(@"
                 SELECT 
-            t.id_tutoria,
-            t.fecha,
-            t.hora,
-            t.id_modalidad,
-            t.tema,
-            t.comentario_adic,
-            t.id_tutorado,
-            t.id_tutor,
-            t.id_materia,
-            t.id_estado,
+                    t.id_tutoria,
+                    t.fecha,
+                    t.hora,
+                    t.id_modalidad,
+                    t.tema,
+                    t.comentario_adic,
+                    t.id_tutorado,
+                    t.id_tutor,
+                    t.id_materia,
+                    t.id_estado,
 
-            -- Textos relacionados
-            mo.nom_modalidad       AS modalidad_nombre,
-            ma.nom_materia       AS materia_nombre,
-            es.nom_estado      AS estado,
-            u.nom_usu       AS tutor_nombre,
-            u.apel_usu      AS tutor_apellido
-        FROM [EduConnect].[dbo].[tutoria] AS t
-        LEFT JOIN [EduConnect].[dbo].[modalidad]      AS mo ON mo.id_modalidad = t.id_modalidad
-        LEFT JOIN [EduConnect].[dbo].[materia]        AS ma ON ma.id_materia   = t.id_materia
-        LEFT JOIN [EduConnect].[dbo].[estado] AS es ON es.id_estado    = t.id_estado   -- ajusta el nombre de la tabla si es distinto
-        LEFT JOIN [EduConnect].[dbo].[usuario]        AS u  ON u.id_usu        = t.id_tutor 
-        WHERE t.id_tutorado = @idTutorado AND t.id_estado IN (3, 5, 6)
-        ORDER BY t.fecha DESC, t.hora DESC";
+                    -- Textos relacionados
+                    mo.nom_modalidad AS modalidad_nombre,
+                    ma.nom_materia AS materia_nombre,
+                    es.nom_estado AS estado,
+                    u.nom_usu AS tutor_nombre,
+                    u.apel_usu AS tutor_apellido
+                FROM [EduConnect].[dbo].[tutoria] AS t
+                LEFT JOIN [EduConnect].[dbo].[modalidad] AS mo ON mo.id_modalidad = t.id_modalidad
+                LEFT JOIN [EduConnect].[dbo].[materia] AS ma ON ma.id_materia = t.id_materia
+                LEFT JOIN [EduConnect].[dbo].[estado] AS es ON es.id_estado = t.id_estado
+                LEFT JOIN [EduConnect].[dbo].[usuario] AS u ON u.id_usu = t.id_tutor
+                WHERE t.id_tutorado = @idTutorado
+            ");
+
+            // ✅ Solo agrega el filtro si hay estados en la lista
+            if (idsEstado != null && idsEstado.Count > 0)
+            {
+                sqlBuilder.Append(" AND t.id_estado IN (");
+                for (int i = 0; i < idsEstado.Count; i++)
+                {
+                    sqlBuilder.Append($"@idEstado{i}");
+                    if (i < idsEstado.Count - 1)
+                        sqlBuilder.Append(", ");
+                }
+                sqlBuilder.Append(")");
+            }
+
+            sqlBuilder.Append(" ORDER BY t.fecha DESC, t.hora DESC");
+
             using var connection = _dbContextUtility.GetOpenConnection();
-            using var command = new SqlCommand(sql, connection);
+            using var command = new SqlCommand(sqlBuilder.ToString(), connection);
+
+            // Parámetro obligatorio (idTutorado)
             command.Parameters.AddWithValue("@idTutorado", idTutorado);
+
+            // Parámetros de estados si aplica
+            if (idsEstado != null && idsEstado.Count > 0)
+            {
+                for (int i = 0; i < idsEstado.Count; i++)
+                    command.Parameters.AddWithValue($"@idEstado{i}", idsEstado[i]);
+            }
 
             using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -71,8 +97,6 @@ namespace EduConnect_API.Repositories
 
                 lista.Add(dto);
             }
-
-
 
             return lista;
         }
