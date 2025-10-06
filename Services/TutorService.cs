@@ -10,13 +10,17 @@ namespace EduConnect_API.Services
 
         public TutorService(ITutorRepository repo) => _tutorRepository = repo;
 
-        public Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialAsync(int idTutor)
-            => _tutorRepository.ObtenerHistorialTutorAsync(idTutor);
+        // ✅ Validar que el id del tutor sea obligatorio
+        public async Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialAsync(int idTutor, List<int>? estados)
+        {
+            if (idTutor <= 0)
+                throw new ArgumentException("El ID del tutor es obligatorio y debe ser mayor que 0.");
+
+            return await _tutorRepository.ObtenerHistorialTutorAsync(idTutor, estados);
+        }
 
         public Task<IEnumerable<ObtenerTutorDto>> ObtenerTutoresAsync(BuscarTutorDto filtros)
             => _tutorRepository.ObtenerTutoresAsync(filtros);
-
-
     }
-}
 
+}

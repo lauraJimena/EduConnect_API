@@ -11,15 +11,24 @@ namespace EduConnect_API.Controllers
         private readonly ITutorService _tutorService;
         public TutorController(ITutorService service) => _tutorService = service;
 
-        // GET api/tutor/{id}/historial
-        [HttpGet("{idTutor}/historial")]
-        public async Task<IActionResult> ObtenerHistorialTutor(int idTutor)
+
+        // Trae historial del tutor filtrado por múltiples estados
+        [HttpGet("{idTutor}/historial/")]
+        public async Task<IActionResult> ObtenerHistorialFiltradoTutor(
+            int idTutor,
+            [FromQuery] List<int>? idEstados)
         {
-            var datos = await _tutorService.ObtenerHistorialAsync(idTutor);
+            // Validación obligatoria del tutor
+            if (idTutor <= 0)
+                return BadRequest("El ID del tutor es obligatorio.");
+
+            var datos = await _tutorService.ObtenerHistorialAsync(idTutor, idEstados);
             return Ok(datos);
         }
+
+        // Ya existente: búsqueda general de tutores
         private static string? Clean(string? s)
-        => string.IsNullOrWhiteSpace(s) || s?.Trim().ToLower() == "string" ? null : s;
+            => string.IsNullOrWhiteSpace(s) || s?.Trim().ToLower() == "string" ? null : s;
 
         [HttpPost("obtener")]
         public async Task<IActionResult> Obtener([FromBody] BuscarTutorDto filtros)
@@ -35,3 +44,4 @@ namespace EduConnect_API.Controllers
         }
     }
 }
+

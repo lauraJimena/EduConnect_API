@@ -4,9 +4,10 @@ namespace EduConnect_API.Services.Interfaces
 {
     public interface ITutorService
     {
-        Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialAsync(int idTutor);
+        // ✅ idTutor obligatorio, estados opcionales
+        Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialAsync(int idTutor, List<int>? estados);
 
         Task<IEnumerable<ObtenerTutorDto>> ObtenerTutoresAsync(BuscarTutorDto filtros);
+
     }
 }
-

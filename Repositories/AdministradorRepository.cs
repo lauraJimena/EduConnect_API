@@ -62,7 +62,7 @@ namespace EduConnect_API.Repositories
                 usuarios.Add(new ObtenerUsuarioDto
                 {
                     IdUsu = reader.GetInt32(0),
-                    Nombre = reader.GetString(1),                    
+                    Nombre = reader.GetString(1),
                     Apellido = reader.GetString(2),
                     IdTipoIdent = reader.GetByte(3),
                     NumIdent = reader.GetString(4),
@@ -82,38 +82,49 @@ namespace EduConnect_API.Repositories
         public async Task<ObtenerUsuarioDto?> ObtenerUsuarioPorId(int idUsuario)
         {
             const string sql = @"
-    SELECT id_usu, nom_usu, apel_usu, id_tipo_ident, num_ident, 
-           correo_usu, tel_usu, contras_usu, id_carrera, id_semestre, 
-           id_rol, id_estado
-    FROM [EduConnect].[dbo].[usuario]
-    WHERE id_usu = @idUsuario";
+ SELECT
+     u.id_usu         AS IdUsu,
+     u.nom_usu        AS Nombre,
+     u.apel_usu       AS Apellido,
+     u.id_tipo_ident  AS IdTipoIdent,
+     u.num_ident      AS NumIdent,
+     u.correo_usu     AS Correo,
+     u.tel_usu        AS TelUsu,
+     u.contras_usu    AS ContrasUsu,
+     u.id_carrera     AS IdCarrera,
+     u.id_semestre    AS IdSemestre,
+     u.id_rol         AS IdRol,
+     u.id_estado      AS IdEstado
+ FROM [EduConnect].[dbo].[usuario] AS u
+ WHERE u.id_usu = @idUsu;";
 
             try
             {
                 using var connection = _dbContextUtility.GetOpenConnection();
                 using var command = new SqlCommand(sql, connection);
-
-                command.Parameters.AddWithValue("@idUsuario", idUsuario);
+                command.Parameters.AddWithValue("@idUsu", idUsuario);
 
                 using var reader = await command.ExecuteReaderAsync();
+
                 if (await reader.ReadAsync())
                 {
                     return new ObtenerUsuarioDto
                     {
-                        IdUsu = reader.GetInt32(0),
-                        Nombre = reader.GetString(1),
-                        Apellido = reader.GetString(2),
-                        IdTipoIdent = reader.GetByte(3),
-                        NumIdent = reader.GetString(4),
-                        Correo = reader.GetString(5),
-                        TelUsu = reader.GetString(6),
-                        ContrasUsu = reader.GetString(7),
-                        IdCarrera = reader.GetInt16(8),
-                        IdSemestre = reader.GetByte(9),
-                        IdRol = reader.GetByte(10),
-                        IdEstado = reader.GetByte(11)
+                        IdUsu = reader.GetInt32(reader.GetOrdinal("IdUsu")),
+                        Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
+                        Apellido = reader.GetString(reader.GetOrdinal("Apellido")),
+                        IdTipoIdent = reader.GetByte(reader.GetOrdinal("IdTipoIdent")),
+                        NumIdent = reader.GetString(reader.GetOrdinal("NumIdent")),
+                        Correo = reader.GetString(reader.GetOrdinal("Correo")),
+                        TelUsu = reader.GetString(reader.GetOrdinal("TelUsu")),
+                        ContrasUsu = reader.GetString(reader.GetOrdinal("ContrasUsu")),
+                        IdCarrera = reader.GetInt16(reader.GetOrdinal("IdCarrera")),
+                        IdSemestre = reader.GetByte(reader.GetOrdinal("IdSemestre")),
+                        IdRol = reader.GetByte(reader.GetOrdinal("IdRol")),
+                        IdEstado = reader.GetByte(reader.GetOrdinal("IdEstado"))
                     };
                 }
+
                 return null;
             }
             catch (Exception ex)
@@ -125,19 +136,18 @@ namespace EduConnect_API.Repositories
         public async Task<int> ActualizarUsuario(ActualizarUsuarioDto usuario)
         {
             const string sql = @"
-        UPDATE [EduConnect].[dbo].[usuario]
-        SET nom_usu = @nom_usu,
-            apel_usu = @apel_usu,
-            id_tipo_ident = @id_tipo_ident,
-            num_ident = @num_ident,
-            correo_usu = @correo_usu,
-            tel_usu = @tel_usu,
-            contras_usu = @contras_usu,
-            id_carrera = @id_carrera,
-            id_semestre = @id_semestre,
-            id_rol = @id_rol,
-            id_estado = @id_estado
-        WHERE id_usu = @id_usu";
+UPDATE [EduConnect].[dbo].[usuario]
+SET nom_usu = @nom_usu,
+    apel_usu = @apel_usu,
+    id_tipo_ident = @id_tipo_ident,
+    num_ident = @num_ident,
+    correo_usu = @correo_usu,
+    tel_usu = @tel_usu,        
+    id_carrera = @id_carrera,
+    id_semestre = @id_semestre,
+    id_rol = @id_rol
+    
+WHERE id_usu = @id_usu";
 
             try
             {
@@ -151,11 +161,10 @@ namespace EduConnect_API.Repositories
                 command.Parameters.AddWithValue("@num_ident", usuario.NumIdent);
                 command.Parameters.AddWithValue("@correo_usu", usuario.Correo);
                 command.Parameters.AddWithValue("@tel_usu", usuario.TelUsu);
-                command.Parameters.AddWithValue("@contras_usu", usuario.ContrasUsu);
                 command.Parameters.AddWithValue("@id_carrera", usuario.IdCarrera);
                 command.Parameters.AddWithValue("@id_semestre", usuario.IdSemestre);
                 command.Parameters.AddWithValue("@id_rol", usuario.IdRol);
-                command.Parameters.AddWithValue("@id_estado", usuario.IdEstado);
+
 
                 return await command.ExecuteNonQueryAsync();
             }
@@ -167,9 +176,14 @@ namespace EduConnect_API.Repositories
         public async Task<int> EliminarUsuario(int idUsuario)
         {
             const string sql = @"
-                                UPDATE [EduConnect].[dbo].[usuario]
-                                SET id_estado = 2 
-                                WHERE id_usu = @idUsuario AND id_estado <> 2";  // Solo cambia si no está inactivo
+                        UPDATE [EduConnect].[dbo].[usuario]
+                        SET id_estado = 
+                            CASE 
+                                WHEN id_estado = 1 THEN 2  -- si está activo inactiva
+                                WHEN id_estado = 2 THEN 1  -- si está inactivo activa
+                                ELSE id_estado             -- por si acaso, deja igual
+                            END
+                        WHERE id_usu = @idUsuario;";
 
             try
             {
@@ -182,11 +196,8 @@ namespace EduConnect_API.Repositories
             }
             catch (Exception ex)
             {
-                throw new Exception("Error al eliminar (inactivar) el usuario: " + ex.Message);
+                throw new Exception("Error al cambiar el estado del usuario: " + ex.Message);
             }
         }
-
-
-
     }
 }
