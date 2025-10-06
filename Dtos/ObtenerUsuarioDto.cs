@@ -16,6 +16,8 @@ namespace EduConnect_API.Dtos
         public int IdSemestre { get; set; }                                        
         public int IdRol { get; set; }
         public int IdEstado { get; set; }
+        public int IdTipoIdent { get; set; }    
+        public int IdCarrera { get; set; }  
         //public string Carrera { get; set; } = string.Empty; 
 
 
