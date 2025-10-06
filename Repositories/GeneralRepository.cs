@@ -48,10 +48,25 @@ namespace EduConnect_API.Repositories
         }
         public async Task<ObtenerUsuarioDto> IniciarSesion(IniciarSesionDto usuario)
         {
-            const string sql = @"
-                SELECT id_usu, nom_usu, apel_usu, num_ident, correo_usu, id_rol, id_estado
-                FROM [EduConnect].[dbo].[usuario]
-                WHERE num_ident = @num_ident AND contras_usu = @contras_usu AND id_estado = 1";
+            const string sql = @"SELECT 
+    u.id_usu AS IdUsuario,
+    u.nom_usu AS Nombre,
+    u.apel_usu AS Apellido,
+    u.num_ident AS NumeroIdent,
+    u.correo_usu AS Correo,
+    r.nom_rol AS Rol,
+    e.nom_estado AS Estado, 
+    c.nom_carrera AS Carrera,
+	r.id_rol,
+    u.id_estado
+FROM [EduConnect].[dbo].[usuario] AS u
+INNER JOIN [EduConnect].[dbo].[rol] AS r ON u.id_rol = r.id_rol
+INNER JOIN [EduConnect].[dbo].[estado] AS e ON u.id_estado = e.id_estado
+INNER JOIN [EduConnect].[dbo].[carrera] AS c ON u.id_carrera = c.id_carrera
+WHERE 
+    u.num_ident = num_ident 
+    AND u.contras_usu = @contras_usu
+    AND u.id_estado = 1";
 
             using var connection = _dbContextUtility.GetOpenConnection();
             using var command = new SqlCommand(sql, connection);
@@ -69,8 +84,12 @@ namespace EduConnect_API.Repositories
                     Apellido = reader.GetString(2),
                     NumIdent = reader.GetString(3),
                     Correo = reader.GetString(4),
-                    IdRol = reader.GetByte(5),
-                    IdEstado = reader.GetByte(6)
+                    Rol = reader.GetString(5),
+                    Estado = reader.GetString(6),
+                    Carrera = reader.GetString(7),
+                    IdRol= reader.GetByte(8), 
+                    IdEstado = reader.GetByte(9)
+
                 };
             }
 
