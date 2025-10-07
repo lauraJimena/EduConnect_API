@@ -1,4 +1,5 @@
 ﻿using EduConnect_API.Dtos;
+using EduConnect_API.Services;
 using EduConnect_API.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -42,6 +43,26 @@ namespace EduConnect_API.Controllers
             var resultado = await _tutorService.ObtenerTutoresAsync(filtros);
             return Ok(resultado);
         }
+        [HttpPut("ActualizarPerfil")]
+        public async Task<ActionResult> ActualizarPerfil([FromBody] EditarPerfilDto perfil)
+        {
+            try
+            {
+                var result = await _tutorService.ActualizarPerfilTutor(perfil);
+
+                if (result > 0)
+                    return Ok("Perfil del tutor actualizado con éxito");
+                else
+                    return NotFound("Tutor no encontrado o no se pudo actualizar");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
     }
 }
-
