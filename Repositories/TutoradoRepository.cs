@@ -100,5 +100,156 @@ namespace EduConnect_API.Repositories
 
             return lista;
         }
+        public async Task<int> ActualizarPerfil(EditarPerfilDto perfil)
+        {
+            const string sql = @"
+UPDATE [EduConnect].[dbo].[usuario]
+SET nom_usu = @nom_usu,
+    apel_usu = @apel_usu,
+    id_tipo_ident = @id_tipo_ident,
+    num_ident = @num_ident,
+    correo_usu = @correo_usu,
+    tel_usu = @tel_usu
+WHERE id_usu = @id_usu";
+
+            try
+            {
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue("@id_usu", perfil.IdUsu);
+                command.Parameters.AddWithValue("@nom_usu", perfil.Nombre);
+                command.Parameters.AddWithValue("@apel_usu", perfil.Apellido);
+                command.Parameters.AddWithValue("@id_tipo_ident", perfil.IdTipoIdent);
+                command.Parameters.AddWithValue("@num_ident", perfil.NumIdent);
+                command.Parameters.AddWithValue("@correo_usu", perfil.Correo);
+                command.Parameters.AddWithValue("@tel_usu", perfil.TelUsu);
+
+                return await command.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al actualizar el perfil del tutorado: " + ex.Message);
+            }
+        }
+
+        public async Task<bool> ExisteUsuario(int idUsuario)
+        {
+            const string sql = "SELECT COUNT(1) FROM [EduConnect].[dbo].[usuario] WHERE id_usu = @id_usu";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@id_usu", idUsuario);
+
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0;
+        }
+        public async Task<int> ObtenerRolUsuario(int idUsuario)
+        {
+            const string sql = "SELECT id_rol FROM [EduConnect].[dbo].[usuario] WHERE id_usu = @id_usu";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@id_usu", idUsuario);
+
+            var result = await command.ExecuteScalarAsync();
+            return result != null ? Convert.ToInt32(result) : 0;
+        }
+        public async Task<IEnumerable<SolicitudTutoriaDto>> ObtenerSolicitudesTutorias(FiltroSolicitudesDto filtro)
+        {
+            var sql = @"
+SELECT 
+    t.id_tutoria AS IdTutoria,
+    CONCAT(u.nom_usu, ' ', u.apel_usu) AS NombreTutor,
+    m.nom_materia AS MateriaSolicitada,
+    t.fecha AS FechaPropuesta,
+    t.hora AS HoraPropuesta,
+    t.tema AS TemaRequerido,
+    e.nom_estado AS Estado,
+    t.id_estado AS IdEstado
+FROM [EduConnect].[dbo].[tutoria] t
+INNER JOIN [EduConnect].[dbo].[usuario] u ON t.id_tutor = u.id_usu
+INNER JOIN [EduConnect].[dbo].[materia] m ON t.id_materia = m.id_materia
+INNER JOIN [EduConnect].[dbo].[estado] e ON t.id_estado = e.id_estado
+WHERE t.id_tutorado = @IdTutorado";
+
+            // Agregar filtro por estados si se especifican
+            if (filtro.Estados != null && filtro.Estados.Count > 0)
+            {
+                sql += " AND t.id_estado IN (";
+                for (int i = 0; i < filtro.Estados.Count; i++)
+                {
+                    sql += $"@Estado{i}";
+                    if (i < filtro.Estados.Count - 1)
+                        sql += ", ";
+                }
+                sql += ")";
+            }
+
+            sql += " ORDER BY t.fecha DESC, t.hora DESC";
+
+            var lista = new List<SolicitudTutoriaDto>();
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+
+            command.Parameters.AddWithValue("@IdTutorado", filtro.IdTutorado);
+
+            // Agregar parámetros para los estados si existen
+            if (filtro.Estados != null && filtro.Estados.Count > 0)
+            {
+                for (int i = 0; i < filtro.Estados.Count; i++)
+                {
+                    command.Parameters.AddWithValue($"@Estado{i}", filtro.Estados[i]);
+                }
+            }
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var dto = new SolicitudTutoriaDto
+                {
+                    IdTutoria = reader.GetInt32(reader.GetOrdinal("IdTutoria")),
+                    NombreTutor = reader.GetString(reader.GetOrdinal("NombreTutor")),
+                    MateriaSolicitada = reader.GetString(reader.GetOrdinal("MateriaSolicitada")),
+                    FechaPropuesta = reader.GetDateTime(reader.GetOrdinal("FechaPropuesta")),
+                    HoraPropuesta = reader.GetTimeSpan(reader.GetOrdinal("HoraPropuesta")),
+                    TemaRequerido = reader.GetString(reader.GetOrdinal("TemaRequerido")),
+                    Estado = reader.GetString(reader.GetOrdinal("Estado")),
+                    IdEstado = Convert.ToInt32(reader["IdEstado"]) // CORREGIDO: Conversión segura
+                };
+                lista.Add(dto);
+            }
+
+            return lista;
+        }
+
+        public async Task<IEnumerable<EstadoSolicitudDto>> ObtenerEstadosSolicitud()
+        {
+            const string sql = @"
+SELECT 
+    id_estado AS IdEstado,
+    nom_estado AS NombreEstado
+FROM [EduConnect].[dbo].[estado]
+WHERE id_estado IN (1, 2, 3)";
+
+            var lista = new List<EstadoSolicitudDto>();
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var dto = new EstadoSolicitudDto
+                {
+                    IdEstado = Convert.ToInt32(reader["IdEstado"]), // CORREGIDO: Conversión segura
+                    NombreEstado = reader.GetString(reader.GetOrdinal("NombreEstado"))
+                };
+                lista.Add(dto);
+            }
+
+            return lista;
+        }
     }
 }

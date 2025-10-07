@@ -154,6 +154,60 @@ ORDER BY u.nom_usu, u.apel_usu, m.nom_materia;";
 
             return lista;
         }
+        public async Task<int> ActualizarPerfilTutor(EditarPerfilDto tutor)
+        {
+            const string sql = @"
+UPDATE [EduConnect].[dbo].[usuario]
+SET nom_usu = @nom_usu,
+    apel_usu = @apel_usu,
+    id_tipo_ident = @id_tipo_ident,
+    num_ident = @num_ident,
+    correo_usu = @correo_usu,
+    tel_usu = @tel_usu
+WHERE id_usu = @id_usu";
 
+            try
+            {
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue("@id_usu", tutor.IdUsu);
+                command.Parameters.AddWithValue("@nom_usu", tutor.Nombre);
+                command.Parameters.AddWithValue("@apel_usu", tutor.Apellido);
+                command.Parameters.AddWithValue("@id_tipo_ident", tutor.IdTipoIdent);
+                command.Parameters.AddWithValue("@num_ident", tutor.NumIdent);
+                command.Parameters.AddWithValue("@correo_usu", tutor.Correo);
+                command.Parameters.AddWithValue("@tel_usu", tutor.TelUsu);
+
+                return await command.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al actualizar el perfil del tutor: " + ex.Message);
+            }
+        }
+
+        public async Task<bool> ExisteUsuario(int idTutor)
+        {
+            const string sql = "SELECT COUNT(1) FROM [EduConnect].[dbo].[usuario] WHERE id_usu = @id_usu";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@id_usu", idTutor);
+
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0;
+        }
+        public async Task<int> ObtenerRolUsuario(int idUsuario)
+        {
+            const string sql = "SELECT id_rol FROM [EduConnect].[dbo].[usuario] WHERE id_usu = @id_usu";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@id_usu", idUsuario);
+
+            var result = await command.ExecuteScalarAsync();
+            return result != null ? Convert.ToInt32(result) : 0;
+        }
     }
 }
