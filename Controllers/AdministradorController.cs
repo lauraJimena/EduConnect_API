@@ -32,14 +32,28 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        //[HttpGet("ConsultarUsuarios")]
+        //public async Task<ActionResult<IEnumerable<ObtenerUsuarioDto>>> ObtenerUsuarios()
+        //{
+        //    try
+        //    {
+
+        //        var usuarios = await _administradorService.ObtenerUsuarios();
+
+        //        return Ok(usuarios);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, "Error interno: " + ex.Message);
+        //    }
+        //}
+
         [HttpGet("ConsultarUsuarios")]
-        public async Task<ActionResult<IEnumerable<ObtenerUsuarioDto>>> ObtenerUsuarios()
+        public async Task<IActionResult> ConsultarUsuarios(int? idRol, int? idEstado, string? numIdent)
         {
             try
             {
-
-                var usuarios = await _administradorService.ObtenerUsuarios();
-
+                var usuarios = await _administradorService.ObtenerUsuariosAsync(idRol, idEstado, numIdent);
                 return Ok(usuarios);
             }
             catch (Exception ex)
@@ -47,6 +61,7 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+
         //Obtener usuario por ID    
         [HttpGet("ObtenerUsuarioPorId/{idUsuario}")]
         public async Task<IActionResult> ObtenerUsuarioPorId(int idUsuario)
@@ -108,6 +123,8 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+       
+
 
     }
 }

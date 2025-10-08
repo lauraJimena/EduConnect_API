@@ -91,6 +91,29 @@ namespace EduConnect_API.Services
             return result;
 
         }
+        public async Task<List<CarreraDto>> ObtenerCarrerasAsync()
+        {
+            // No se necesita validación de parámetros porque no recibe ninguno,
+            
+            var carreras = await _generalRepository.ObtenerCarrerasAsync();
+
+            if (carreras == null || !carreras.Any())
+                throw new InvalidOperationException("No se encontraron carreras registradas.");
+
+            return carreras;
+        }
+        public async Task<List<TipoIdentidadDto>> ObtenerTiposIdentidadAsync()
+        {
+            // No se necesita validación de parámetros porque no recibe ninguno,
+
+            var tiposIdent = await _generalRepository.ObtenerTiposIdentidadAsync();
+
+            if (tiposIdent == null || !tiposIdent.Any())
+                throw new InvalidOperationException("No se encontraron carreras registradas.");
+
+            return tiposIdent;
+        }
+
     }
 
 }

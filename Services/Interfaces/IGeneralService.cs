@@ -6,6 +6,7 @@ namespace EduConnect_API.Services.Interfaces
     {
         Task RegistrarUsuario(CrearUsuarioDto usuario);
         Task<ObtenerUsuarioDto> IniciarSesion(IniciarSesionDto usuario);
-        
+        Task<List<CarreraDto>> ObtenerCarrerasAsync();
+        Task<List<TipoIdentidadDto>> ObtenerTiposIdentidadAsync();
     }
 }

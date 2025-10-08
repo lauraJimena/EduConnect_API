@@ -2,6 +2,7 @@
 using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Utilities;
 using Microsoft.Data.SqlClient;
+using System.Text;
 
 namespace EduConnect_API.Repositories
 {
@@ -46,57 +47,149 @@ namespace EduConnect_API.Repositories
                 throw new Exception("Error al registrar el usuario en la base de datos: " + ex.Message);
             }
         }
-        public async Task<IEnumerable<ObtenerUsuarioDto>> ObtenerUsuarios()
+        public async Task<IEnumerable<ObtenerUsuarioDto>> ObtenerUsuarios(int? idRol = null, int? idEstado = null, string? numIdent = null)
         {
             var usuarios = new List<ObtenerUsuarioDto>();
 
-            const string sql = @"SELECT 
-                                u.id_usu AS IdUsuario,
-                                u.nom_usu AS Nombre,
-                                u.apel_usu AS Apellido,
-                                ti.nombre AS TipoIdentificacion,
-                                u.num_ident AS NumeroIdentificacion,
-                                u.correo_usu AS Correo,
-                                u.tel_usu AS Telefono,
-                                c.nom_carrera AS Carrera,
-                                s.num_semestre AS Semestre,
-                                r.nom_rol AS Rol,
-                                e.nom_estado AS Estado
-                            FROM [EduConnect].[dbo].[usuario] AS u
-                            INNER JOIN [EduConnect].[dbo].[tipo_ident] AS ti ON u.id_tipo_ident = ti.id_tipo_ident
-                            INNER JOIN [EduConnect].[dbo].[carrera] AS c ON u.id_carrera = c.id_carrera
-                            INNER JOIN [EduConnect].[dbo].[semestre] AS s ON u.id_semestre = s.id_semestre
-                            INNER JOIN [EduConnect].[dbo].[rol] AS r ON u.id_rol = r.id_rol
-                            INNER JOIN [EduConnect].[dbo].[estado] AS e ON u.id_estado = e.id_estado
-                            ORDER BY u.nom_usu, u.apel_usu;
-                            ";
+            // Consulta base
+            var sql = new StringBuilder(@"
+        SELECT 
+            u.id_usu AS IdUsuario,
+            u.nom_usu AS Nombre,
+            u.apel_usu AS Apellido,
+            ti.nombre AS TipoIdentificacion,
+            u.num_ident AS NumeroIdentificacion,
+            u.correo_usu AS Correo,
+            u.tel_usu AS Telefono,
+            c.nom_carrera AS Carrera,
+            s.num_semestre AS Semestre,
+            r.nom_rol AS Rol,
+            e.nom_estado AS Estado,
+            u.id_rol AS IdRol,
+            u.id_estado AS IdEstado, 
+            u.id_tipo_ident AS IdTipoIdent,
+            u.id_carrera AS IdCarrera
+        FROM [EduConnect].[dbo].[usuario] AS u
+        INNER JOIN [EduConnect].[dbo].[tipo_ident] AS ti ON u.id_tipo_ident = ti.id_tipo_ident
+        INNER JOIN [EduConnect].[dbo].[carrera] AS c ON u.id_carrera = c.id_carrera
+        INNER JOIN [EduConnect].[dbo].[semestre] AS s ON u.id_semestre = s.id_semestre
+        INNER JOIN [EduConnect].[dbo].[rol] AS r ON u.id_rol = r.id_rol
+        INNER JOIN [EduConnect].[dbo].[estado] AS e ON u.id_estado = e.id_estado
+        WHERE 1=1
+    ");
 
-            using var connection = _dbContextUtility.GetOpenConnection();
-            using var command = new SqlCommand(sql, connection);
-            using var reader = await command.ExecuteReaderAsync();
+            // Agregar filtros dinámicos
+            if (idRol.HasValue)
+                sql.Append(" AND u.id_rol = @idRol");
 
-            while (await reader.ReadAsync())
+            if (idEstado.HasValue)
+                sql.Append(" AND u.id_estado = @idEstado");
+
+            if (!string.IsNullOrWhiteSpace(numIdent))
+                sql.Append(" AND u.num_ident LIKE '%' + @numIdent + '%'"); // permite coincidencias parciales
+
+            sql.Append(" ORDER BY u.nom_usu, u.apel_usu;");
+
+            try
             {
-                usuarios.Add(new ObtenerUsuarioDto
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql.ToString(), connection);
+
+                // Parámetros opcionales
+                if (idRol.HasValue)
+                    command.Parameters.AddWithValue("@idRol", idRol.Value);
+
+                if (idEstado.HasValue)
+                    command.Parameters.AddWithValue("@idEstado", idEstado.Value);
+
+                if (!string.IsNullOrWhiteSpace(numIdent))
+                    command.Parameters.AddWithValue("@numIdent", numIdent);
+
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
                 {
-                    IdUsu = reader.GetInt32(0),
-                    Nombre = reader.GetString(1),
-                    Apellido = reader.GetString(2),
-                    TipoIdent= reader.GetString(3),
-                    NumIdent = reader.GetString(4),
-                    Correo = reader.GetString(5),
-                    TelUsu = reader.GetString(6),
-                    Carrera = reader.GetString(7),
-                    IdSemestre = reader.GetByte(8),
-                    Rol = reader.GetString(9),
-                    Estado = reader.GetString(10)
+                    usuarios.Add(new ObtenerUsuarioDto
+                    {
+                        IdUsu = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
+                        Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
+                        Apellido = reader.GetString(reader.GetOrdinal("Apellido")),
+                        TipoIdent = reader.GetString(reader.GetOrdinal("TipoIdentificacion")),
+                        NumIdent = reader.GetString(reader.GetOrdinal("NumeroIdentificacion")),
+                        Correo = reader.GetString(reader.GetOrdinal("Correo")),
+                        TelUsu = reader.GetString(reader.GetOrdinal("Telefono")),
+                        Carrera = reader.GetString(reader.GetOrdinal("Carrera")),
+                        IdSemestre = reader.GetByte(reader.GetOrdinal("Semestre")),
+                        Rol = reader.GetString(reader.GetOrdinal("Rol")),
+                        Estado = reader.GetString(reader.GetOrdinal("Estado")), 
+                        IdRol= reader.GetByte(reader.GetOrdinal("IdRol")),
+                        IdEstado = reader.GetByte(reader.GetOrdinal("IdEstado")),
+                        IdTipoIdent= reader.GetByte(reader.GetOrdinal("IdTipoIdent")), 
+                        IdCarrera= reader.GetInt16(reader.GetOrdinal("IdCarrera"))
 
 
-                });
+                    });
+                }
+
+                return usuarios;
             }
-
-            return usuarios;
+            catch (Exception ex)
+            {
+                throw new Exception("Error al consultar los usuarios: " + ex.Message);
+            }
         }
+
+        //public async Task<IEnumerable<ObtenerUsuarioDto>> ObtenerUsuarios()
+        //{
+        //    var usuarios = new List<ObtenerUsuarioDto>();
+
+        //    const string sql = @"SELECT 
+        //                        u.id_usu AS IdUsuario,
+        //                        u.nom_usu AS Nombre,
+        //                        u.apel_usu AS Apellido,
+        //                        ti.nombre AS TipoIdentificacion,
+        //                        u.num_ident AS NumeroIdentificacion,
+        //                        u.correo_usu AS Correo,
+        //                        u.tel_usu AS Telefono,
+        //                        c.nom_carrera AS Carrera,
+        //                        s.num_semestre AS Semestre,
+        //                        r.nom_rol AS Rol,
+        //                        e.nom_estado AS Estado
+        //                    FROM [EduConnect].[dbo].[usuario] AS u
+        //                    INNER JOIN [EduConnect].[dbo].[tipo_ident] AS ti ON u.id_tipo_ident = ti.id_tipo_ident
+        //                    INNER JOIN [EduConnect].[dbo].[carrera] AS c ON u.id_carrera = c.id_carrera
+        //                    INNER JOIN [EduConnect].[dbo].[semestre] AS s ON u.id_semestre = s.id_semestre
+        //                    INNER JOIN [EduConnect].[dbo].[rol] AS r ON u.id_rol = r.id_rol
+        //                    INNER JOIN [EduConnect].[dbo].[estado] AS e ON u.id_estado = e.id_estado
+        //                    ORDER BY u.nom_usu, u.apel_usu;
+        //                    ";
+
+        //    using var connection = _dbContextUtility.GetOpenConnection();
+        //    using var command = new SqlCommand(sql, connection);
+        //    using var reader = await command.ExecuteReaderAsync();
+
+        //    while (await reader.ReadAsync())
+        //    {
+        //        usuarios.Add(new ObtenerUsuarioDto
+        //        {
+        //            IdUsu = reader.GetInt32(0),
+        //            Nombre = reader.GetString(1),
+        //            Apellido = reader.GetString(2),
+        //            TipoIdent= reader.GetString(3),
+        //            NumIdent = reader.GetString(4),
+        //            Correo = reader.GetString(5),
+        //            TelUsu = reader.GetString(6),
+        //            Carrera = reader.GetString(7),
+        //            IdSemestre = reader.GetByte(8),
+        //            Rol = reader.GetString(9),
+        //            Estado = reader.GetString(10)
+
+
+        //        });
+        //    }
+
+        //    return usuarios;
+        //}
         public async Task<ObtenerUsuarioDto?> ObtenerUsuarioPorId(int idUsuario)
         {
             const string sql = @"
