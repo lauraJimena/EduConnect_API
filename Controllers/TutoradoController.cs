@@ -76,7 +76,34 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        [HttpPost("CrearSolicitudTutoria")]
+        public async Task<ActionResult> CrearSolicitudTutoria([FromBody] SolicitudTutoriaRequestDto request)
+        {
+            try
+            {
+                var result = await _tutoradoService.CrearSolicitudTutoria(request);
+
+                if (result > 0)
+                    return Ok("Solicitud de tutoría creada con éxito. Estado: Pendiente");
+                else
+                    return BadRequest("No se pudo crear la solicitud de tutoría");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
     }
-}
+
+        
+    }
+
+
+
+    
    
     

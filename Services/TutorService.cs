@@ -65,5 +65,59 @@ namespace EduConnect_API.Services
 
             return await _tutorRepository.ActualizarPerfilTutor(tutor);
         }
+        public async Task<IEnumerable<SolicitudTutorDto>> ObtenerSolicitudesTutor(FiltroSolicitudesTutorDto filtro)
+        {
+            // Validaciones
+            if (filtro.IdTutor <= 0)
+                throw new ArgumentException("El ID del tutor es obligatorio.");
+
+            if (!await _tutorRepository.ExisteUsuario(filtro.IdTutor))
+                throw new ArgumentException("El tutor no existe.");
+
+            int rolUsuario = await _tutorRepository.ObtenerRolUsuario(filtro.IdTutor);
+            if (rolUsuario != 2)
+                throw new ArgumentException("El usuario no tiene permisos de tutor.");
+
+            return await _tutorRepository.ObtenerSolicitudesTutor(filtro);
+        }
+
+        public async Task<int> AceptarSolicitudTutoria(int idTutoria)
+        {
+            if (idTutoria <= 0)
+                throw new ArgumentException("El ID de la tutoría es obligatorio.");
+
+            return await _tutorRepository.AceptarSolicitudTutoria(idTutoria);
+        }
+
+        public async Task<int> RechazarSolicitudTutoria(int idTutoria)
+        {
+            if (idTutoria <= 0)
+                throw new ArgumentException("El ID de la tutoría es obligatorio.");
+
+            return await _tutorRepository.RechazarSolicitudTutoria(idTutoria);
+        }
+
+        public async Task<DetalleSolicitudTutoriaDto> ObtenerDetalleSolicitud(int idTutoria)
+        {
+            if (idTutoria <= 0)
+                throw new ArgumentException("El ID de la tutoría es obligatorio.");
+
+            return await _tutorRepository.ObtenerDetalleSolicitud(idTutoria);
+        }
+
+        public async Task<IEnumerable<MateriaDto>> ObtenerMateriasTutor(int idTutor)
+        {
+            if (idTutor <= 0)
+                throw new ArgumentException("El ID del tutor es obligatorio.");
+
+            if (!await _tutorRepository.ExisteUsuario(idTutor))
+                throw new ArgumentException("El tutor no existe.");
+
+            int rolUsuario = await _tutorRepository.ObtenerRolUsuario(idTutor);
+            if (rolUsuario != 2)
+                throw new ArgumentException("El usuario no tiene permisos de tutor.");
+
+            return await _tutorRepository.ObtenerMateriasTutor(idTutor);
+        }
     }
 }

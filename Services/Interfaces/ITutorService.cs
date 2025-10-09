@@ -11,5 +11,11 @@ namespace EduConnect_API.Services.Interfaces
         
         Task<int> ActualizarPerfilTutor(EditarPerfilDto tutor);
 
+        Task<IEnumerable<SolicitudTutorDto>> ObtenerSolicitudesTutor(FiltroSolicitudesTutorDto filtro);
+        Task<int> AceptarSolicitudTutoria(int idTutoria);
+        Task<int> RechazarSolicitudTutoria(int idTutoria);
+        Task<DetalleSolicitudTutoriaDto> ObtenerDetalleSolicitud(int idTutoria);
+        Task<IEnumerable<MateriaDto>> ObtenerMateriasTutor(int idTutor);
+
     }
 }
