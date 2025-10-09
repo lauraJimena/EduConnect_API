@@ -10,5 +10,9 @@ namespace EduConnect_API.Repositories.Interfaces
         Task<int> ObtenerRolUsuario(int idUsuario);
         Task<IEnumerable<SolicitudTutoriaDto>> ObtenerSolicitudesTutorias(FiltroSolicitudesDto filtro);
         Task<IEnumerable<EstadoSolicitudDto>> ObtenerEstadosSolicitud();
+        Task<int> CrearSolicitudTutoria(SolicitudTutoriaRequestDto solicitud);
+        Task<bool> ExisteTutor(int idTutor);
+        Task<bool> ExisteMateria(int idMateria);
+        Task<bool> ExisteModalidad(int idModalidad);
     }
 }

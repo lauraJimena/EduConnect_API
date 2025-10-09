@@ -251,5 +251,70 @@ WHERE id_estado IN (1, 2, 3)";
 
             return lista;
         }
+        public async Task<int> CrearSolicitudTutoria(SolicitudTutoriaRequestDto solicitud)
+        {
+            const string sql = @"
+INSERT INTO [EduConnect].[dbo].[tutoria] 
+    (fecha, hora, id_modalidad, tema, comentario_adic, id_tutorado, id_tutor, id_materia, id_estado)
+VALUES 
+    (@fecha, @hora, @id_modalidad, @tema, @comentario_adic, @id_tutorado, @id_tutor, @id_materia, 4)"; // id_estado = 4 (Pendiente)
+
+            try
+            {
+                // Convertir string a TimeSpan
+                if (!TimeSpan.TryParse(solicitud.Hora, out TimeSpan horaTimeSpan))
+                {
+                    throw new ArgumentException("Formato de hora inválido");
+                }
+
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue("@fecha", solicitud.Fecha);
+                command.Parameters.AddWithValue("@hora", horaTimeSpan);
+                command.Parameters.AddWithValue("@id_modalidad", solicitud.IdModalidad);
+                command.Parameters.AddWithValue("@tema", solicitud.Tema);
+                command.Parameters.AddWithValue("@comentario_adic", (object)solicitud.ComentarioAdicional ?? DBNull.Value);
+                command.Parameters.AddWithValue("@id_tutorado", solicitud.IdTutorado);
+                command.Parameters.AddWithValue("@id_tutor", solicitud.IdTutor);
+                command.Parameters.AddWithValue("@id_materia", solicitud.IdMateria);
+
+                return await command.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al crear la solicitud de tutoría: " + ex.Message);
+            }
+        }
+        public async Task<bool> ExisteTutor(int idTutor)
+        {
+            const string sql = "SELECT COUNT(1) FROM [EduConnect].[dbo].[usuario] WHERE id_usu = @id_tutor AND id_rol = 2"; // Rol 2 = Tutor
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@id_tutor", idTutor);
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0;
+        }
+
+        public async Task<bool> ExisteMateria(int idMateria)
+        {
+            const string sql = "SELECT COUNT(1) FROM [EduConnect].[dbo].[materia] WHERE id_materia = @id_materia";
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@id_materia", idMateria);
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0;
+        }
+
+        public async Task<bool> ExisteModalidad(int idModalidad)
+        {
+            const string sql = "SELECT COUNT(1) FROM [EduConnect].[dbo].[modalidad] WHERE id_modalidad = @id_modalidad";
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@id_modalidad", idModalidad);
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0;
+        }
     }
-}
+    }
+
