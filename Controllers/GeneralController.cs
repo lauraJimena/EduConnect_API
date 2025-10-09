@@ -48,5 +48,55 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        [HttpGet("ObtenerCarreras")]
+        public async Task<ActionResult> ObtenerCarreras()
+        {
+            try
+            {
+                var carreras = await _generalService.ObtenerCarrerasAsync();
+
+                if (carreras == null || !carreras.Any())
+                    return NotFound("No se encontraron carreras registradas.");
+
+                return Ok(carreras);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
+        [HttpGet("ObtenerTiposIdent")]
+        public async Task<ActionResult> ObtenerTipoIdent()
+        {
+            try
+            {
+                var carreras = await _generalService.ObtenerTiposIdentidadAsync();
+
+                if (carreras == null || !carreras.Any())
+                    return NotFound("No se encontraron carreras registradas.");
+
+                return Ok(carreras);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
     }
 }

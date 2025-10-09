@@ -14,6 +14,7 @@ namespace EduConnect_API.Services
         {
             _administradorRepository = administradorRepository;
         }
+
         public async Task RegistrarUsuario(CrearUsuarioDto usuario)
         {
             //Validaciones básicas obligatorias
@@ -68,19 +69,24 @@ namespace EduConnect_API.Services
             if (result <= 0)
                 throw new Exception("No se pudo registrar el usuario en la base de datos.");
         }
-        public async Task<IEnumerable<ObtenerUsuarioDto>> ObtenerUsuarios()
+        //public async Task<IEnumerable<ObtenerUsuarioDto>> ObtenerUsuarios()
+        //{
+        //    var usuarios = await _administradorRepository.ObtenerUsuarios();
+
+
+        //    if (usuarios == null || !usuarios.Any())
+        //    {
+        //        // En vez de devolver null, lanza excepción controlada
+        //        throw new Exception("No se encontraron usuarios en la base de datos.");
+        //    }
+
+        //    return usuarios;
+        //}
+        public async Task<IEnumerable<ObtenerUsuarioDto>> ObtenerUsuariosAsync(int? idRol = null, int? idEstado = null, string? numIdent = null)
         {
-            var usuarios = await _administradorRepository.ObtenerUsuarios();
-
-            
-            if (usuarios == null || !usuarios.Any())
-            {
-                // En vez de devolver null, lanza excepción controlada
-                throw new Exception("No se encontraron usuarios en la base de datos.");
-            }
-
-            return usuarios;
+            return await _administradorRepository.ObtenerUsuarios(idRol, idEstado, numIdent);
         }
+
         public async Task<ObtenerUsuarioDto> ObtenerUsuarioPorId(int idUsuario)
         {
             if (idUsuario <= 0)
@@ -152,6 +158,7 @@ namespace EduConnect_API.Services
 
             return filasAfectadas;
         }
+
 
 
     }

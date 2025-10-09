@@ -12,7 +12,7 @@ namespace EduConnect_API.Repositories
         {
             _dbContextUtility = dbContextUtility ?? throw new ArgumentNullException(nameof(dbContextUtility));
         }
-    
+
         public async Task<int> RegistrarUsuario(CrearUsuarioDto usuario)
         {
             const string sql = @"
@@ -49,24 +49,24 @@ namespace EduConnect_API.Repositories
         public async Task<ObtenerUsuarioDto> IniciarSesion(IniciarSesionDto usuario)
         {
             const string sql = @"SELECT 
-    u.id_usu AS IdUsuario,
-    u.nom_usu AS Nombre,
-    u.apel_usu AS Apellido,
-    u.num_ident AS NumeroIdent,
-    u.correo_usu AS Correo,
-    r.nom_rol AS Rol,
-    e.nom_estado AS Estado, 
-    c.nom_carrera AS Carrera,
-	r.id_rol,
-    u.id_estado
-FROM [EduConnect].[dbo].[usuario] AS u
-INNER JOIN [EduConnect].[dbo].[rol] AS r ON u.id_rol = r.id_rol
-INNER JOIN [EduConnect].[dbo].[estado] AS e ON u.id_estado = e.id_estado
-INNER JOIN [EduConnect].[dbo].[carrera] AS c ON u.id_carrera = c.id_carrera
-WHERE 
-    u.num_ident = num_ident 
-    AND u.contras_usu = @contras_usu
-    AND u.id_estado = 1";
+                                u.id_usu AS IdUsuario,
+                                u.nom_usu AS Nombre,
+                                u.apel_usu AS Apellido,
+                                u.num_ident AS NumeroIdent,
+                                u.correo_usu AS Correo,
+                                r.nom_rol AS Rol,
+                                e.nom_estado AS Estado, 
+                                c.nom_carrera AS Carrera,
+	                            r.id_rol,
+                                u.id_estado
+                            FROM [EduConnect].[dbo].[usuario] AS u
+                            INNER JOIN [EduConnect].[dbo].[rol] AS r ON u.id_rol = r.id_rol
+                            INNER JOIN [EduConnect].[dbo].[estado] AS e ON u.id_estado = e.id_estado
+                            INNER JOIN [EduConnect].[dbo].[carrera] AS c ON u.id_carrera = c.id_carrera
+                            WHERE 
+                                u.num_ident = num_ident 
+                                AND u.contras_usu = @contras_usu
+                                AND u.id_estado = 1";
 
             using var connection = _dbContextUtility.GetOpenConnection();
             using var command = new SqlCommand(sql, connection);
@@ -95,5 +95,81 @@ WHERE
 
             return null;
         }
+        public async Task<List<CarreraDto>> ObtenerCarrerasAsync()
+        {
+            const string sql = @"
+                            SELECT 
+                                c.id_carrera      AS IdCarrera,
+                                c.nom_carrera     AS NombreCarrera,
+                                c.id_facultad     AS IdFacultad
+                            FROM [EduConnect].[dbo].[carrera] AS c
+                            WHERE c.nom_carrera <> 'Institucional';";
+
+            try
+            {
+                
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql, connection);
+
+                using var reader = await command.ExecuteReaderAsync();
+
+                var carreras = new List<CarreraDto>();
+
+                while (await reader.ReadAsync())
+                {
+                    var carrera = new CarreraDto
+                    {
+                        IdCarrera = reader.GetInt16(reader.GetOrdinal("IdCarrera")),
+                        NombreCarrera = reader.GetString(reader.GetOrdinal("NombreCarrera")),
+                        IdFacultad = reader.GetInt16(reader.GetOrdinal("IdFacultad"))
+                    };
+
+                    carreras.Add(carrera);
+                }
+
+                return carreras;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al consultar las carreras: " + ex.Message);
+            }
+        }
+        public async Task<List<TipoIdentidadDto>> ObtenerTiposIdentidadAsync()
+        {
+            const string sql = @"
+                            SELECT
+                                id_tipo_ident AS IdTipoIdent,
+                                nombre        AS Nombre
+                            FROM [EduConnect].[dbo].[tipo_ident];";
+
+            try
+            {
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql, connection);
+
+                using var reader = await command.ExecuteReaderAsync();
+
+                var tiposIdentidad = new List<TipoIdentidadDto>();
+
+                while (await reader.ReadAsync())
+                {
+                    var tipo = new TipoIdentidadDto
+                    {
+                        IdTipoIdent = reader.GetByte(reader.GetOrdinal("IdTipoIdent")),
+                        Nombre = reader.GetString(reader.GetOrdinal("Nombre"))
+                    };
+
+                    tiposIdentidad.Add(tipo);
+                }
+
+                return tiposIdentidad;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al consultar los tipos de identidad: " + ex.Message);
+            }
+        }
+
+
     }
 }
