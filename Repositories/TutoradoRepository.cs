@@ -171,7 +171,7 @@ FROM [EduConnect].[dbo].[tutoria] t
 INNER JOIN [EduConnect].[dbo].[usuario] u ON t.id_tutor = u.id_usu
 INNER JOIN [EduConnect].[dbo].[materia] m ON t.id_materia = m.id_materia
 INNER JOIN [EduConnect].[dbo].[estado] e ON t.id_estado = e.id_estado
-WHERE t.id_tutorado = @IdTutorado";
+WHERE t.id_tutorado = @IdTutorado AND t.id_estado IN (3, 4, 5)";
 
             // Agregar filtro por estados si se especifican
             if (filtro.Estados != null && filtro.Estados.Count > 0)

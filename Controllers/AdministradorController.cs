@@ -1,6 +1,8 @@
 using EduConnect_API.Dtos;
 using EduConnect_API.Services;
 using EduConnect_API.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EduConnect_API.Controllers
@@ -17,8 +19,11 @@ namespace EduConnect_API.Controllers
             _logger = logger;
             _administradorService = administradorService;
         }
-       
+         /// <summary>
+        /// Registra usarios 
+        /// </summary>
         [HttpPost("RegistrarUsuario")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> RegistrarUsuario([FromBody] CrearUsuarioDto usuario)
         {
             try
@@ -47,8 +52,11 @@ namespace EduConnect_API.Controllers
         //        return StatusCode(500, "Error interno: " + ex.Message);
         //    }
         //}
-
+        /// <summary>
+        /// Obtiene la lista de todos los usuarios registrados en el sistema
+        /// </summary>
         [HttpGet("ConsultarUsuarios")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ConsultarUsuarios(int? idRol, int? idEstado, string? numIdent)
         {
             try
@@ -64,6 +72,7 @@ namespace EduConnect_API.Controllers
 
         //Obtener usuario por ID    
         [HttpGet("ObtenerUsuarioPorId/{idUsuario}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ObtenerUsuarioPorId(int idUsuario)
         {
             try
@@ -82,6 +91,7 @@ namespace EduConnect_API.Controllers
         }
 
         [HttpPut("ActualizarUsuario")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> ActualizarUsuario([FromBody] ActualizarUsuarioDto usuario)
         {
             try
@@ -103,6 +113,7 @@ namespace EduConnect_API.Controllers
             }
         }
         [HttpDelete("EliminarUsuario/{id}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> EliminarUsuario(int id)
         {
             try

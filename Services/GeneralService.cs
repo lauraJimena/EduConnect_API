@@ -1,7 +1,9 @@
-﻿using EduConnect_API.Dtos;
+﻿using Azure.Core;
+using EduConnect_API.Dtos;
 using EduConnect_API.Repositories;
 using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Services.Interfaces;
+using EduConnect_API.Utilities;
 using System.Text.RegularExpressions;
 
 namespace EduConnect_API.Services
@@ -9,10 +11,12 @@ namespace EduConnect_API.Services
     public class GeneralService : IGeneralService
     {
         private readonly IGeneralRepository _generalRepository;
+        private readonly JwtSettingsDto _jwtSettings;
 
-        public GeneralService(IGeneralRepository generalRepository)
+        public GeneralService(IGeneralRepository generalRepository, JwtSettingsDto jwtSettings)
         {
             _generalRepository = generalRepository;
+            _jwtSettings = jwtSettings;
         }
         public async Task RegistrarUsuario(CrearUsuarioDto usuario)
         {
@@ -68,7 +72,7 @@ namespace EduConnect_API.Services
             if (result <= 0)
                 throw new Exception("No se pudo registrar el usuario en la base de datos.");
         }
-        public async Task<ObtenerUsuarioDto> IniciarSesion(IniciarSesionDto usuario)
+        public async Task<RespuestaInicioSesionDto> IniciarSesion(IniciarSesionDto usuario)
         {
             if (string.IsNullOrWhiteSpace(usuario.NumIdent))
                 throw new Exception("El número de identificación es obligatorio.");
@@ -78,17 +82,39 @@ namespace EduConnect_API.Services
             // Validación de contraseña
             if (string.IsNullOrWhiteSpace(usuario.ContrasUsu))
                 throw new Exception("La contraseña es obligatoria.");
-           
-            // Consultar en BD
-            var result = await _generalRepository.IniciarSesion(usuario);
+
+            //request.Contras = EncryptUtility.EncryptPassword(request.Contra);
+
+            RespuestaInicioSesionDto respuesta = new();
+            var result= await _generalRepository.IniciarSesion(usuario);
 
             if (result == null)
                 throw new Exception("Número de identificación o contraseña incorrectos.");
 
-            if (result.IdEstado != 1) // Ejemplo: 1 = activo
-                throw new Exception("El usuario no está activo, contacte al administrador.");
+            if (result.IdEstado != 1) //  1 = activo
+                throw new Exception("El usuario no está activo");
+          
+            respuesta.IdUsuario = result.IdUsu; // Agregar el ID antes de crear el token
+            respuesta = JwtUtility.GenTokenkey(respuesta, _jwtSettings);
+            if (respuesta == null)
+                throw new Exception("Error al generar el token de autenticación. Verifique la configuración JWT.");
 
-            return result;
+            // Continuar solo si todo está OK
+            respuesta.Respuesta = 1;
+            respuesta.Mensaje = "Inicio de sesión exitoso";
+
+            return respuesta;
+
+            //// Consultar en BD
+            //var result = await _generalRepository.IniciarSesion(usuario);
+
+            //if (result == null)
+            //    throw new Exception("Número de identificación o contraseña incorrectos.");
+
+            //if (result.IdEstado != 1) // Ejemplo: 1 = activo
+            //    throw new Exception("El usuario no está activo, contacte al administrador.");
+
+            //return result;
 
         }
         public async Task<List<CarreraDto>> ObtenerCarrerasAsync()
