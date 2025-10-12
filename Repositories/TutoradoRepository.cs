@@ -43,7 +43,7 @@ namespace EduConnect_API.Repositories
                 LEFT JOIN [EduConnect].[dbo].[materia] AS ma ON ma.id_materia = t.id_materia
                 LEFT JOIN [EduConnect].[dbo].[estado] AS es ON es.id_estado = t.id_estado
                 LEFT JOIN [EduConnect].[dbo].[usuario] AS u ON u.id_usu = t.id_tutor
-                WHERE t.id_tutorado = @idTutorado
+                WHERE t.id_tutorado = @idTutorado AND t.id_estado IN (3, 6, 7)
             ");
 
             // ✅ Solo agrega el filtro si hay estados en la lista

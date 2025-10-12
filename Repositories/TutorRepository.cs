@@ -114,7 +114,8 @@ namespace EduConnect_API.Repositories
     CAST(u.id_estado AS int)               AS Estado,
     m.nom_materia                          AS Materia,
     s.num_semestre                         AS Semestre,
-    c.nom_carrera                          AS Carrera
+    c.nom_carrera                          AS Carrera,
+    m.id_materia                           AS IdMateria
 FROM dbo.usuario AS u
 INNER JOIN dbo.tutor_materia AS tm ON tm.id_usu     = u.id_usu
 INNER JOIN dbo.materia       AS m  ON m.id_materia  = tm.id_materia
@@ -148,7 +149,8 @@ ORDER BY u.nom_usu, u.apel_usu, m.nom_materia;";
                     IdEstado = reader.GetInt32(reader.GetOrdinal("Estado")),
                     MateriaNombre = reader.GetString(reader.GetOrdinal("Materia")),
                     Semestre = reader.GetByte(reader.GetOrdinal("Semestre")),
-                    CarreraNombre = reader.GetString(reader.GetOrdinal("Carrera"))
+                    CarreraNombre = reader.GetString(reader.GetOrdinal("Carrera")),
+                    IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria"))
                 });
             }
 
@@ -211,72 +213,82 @@ WHERE id_usu = @id_usu";
         }
         // SOLO solicitudes PENDIENTES (id_estado = 4)
         public async Task<IEnumerable<SolicitudTutorDto>> ObtenerSolicitudesTutor(FiltroSolicitudesTutorDto filtro)
+{
+    var sql = @"
+        SELECT 
+            t.id_tutoria AS IdTutoria,
+            CONCAT(u.nom_usu, ' ', u.apel_usu) AS NombreTutorado,
+            m.nom_materia AS Materia,
+            t.fecha AS Fecha,
+            CONVERT(VARCHAR(5), t.hora, 108) AS Hora,
+            t.tema AS Tema,
+            t.id_estado AS IdEstado,
+            e.nom_estado AS Estado,
+            mo.nom_modalidad AS Modalidad,
+            mo.id_modalidad AS IdModalidad
+        FROM [EduConnect].[dbo].[tutoria] t
+        INNER JOIN [EduConnect].[dbo].[usuario] u ON t.id_tutorado = u.id_usu
+        INNER JOIN [EduConnect].[dbo].[materia] m ON t.id_materia = m.id_materia
+        INNER JOIN [EduConnect].[dbo].[estado] e ON t.id_estado = e.id_estado
+        INNER JOIN [EduConnect].[dbo].[modalidad] mo ON t.id_modalidad = mo.id_modalidad
+        WHERE t.id_tutor = @IdTutor AND t.id_estado = 4"; // SOLO solicitudes pendientes
+
+    // ✅ Aplicar filtros solo si tienen valor real
+    if (filtro.IdMateria.HasValue && filtro.IdMateria.Value > 0)
+    {
+        sql += " AND t.id_materia = @IdMateria";
+    }
+
+    if (filtro.IdModalidad.HasValue && filtro.IdModalidad.Value > 0)
+    {
+        sql += " AND t.id_modalidad = @IdModalidad";
+    }
+
+    sql += " ORDER BY t.fecha DESC, t.hora DESC";
+
+    var lista = new List<SolicitudTutorDto>();
+
+    using var connection = _dbContextUtility.GetOpenConnection();
+    using var command = new SqlCommand(sql, connection);
+
+    // Parámetro obligatorio del tutor
+    command.Parameters.AddWithValue("@IdTutor", filtro.IdTutor);
+
+    // Parámetros opcionales
+    if (filtro.IdMateria.HasValue && filtro.IdMateria.Value > 0)
+    {
+        command.Parameters.AddWithValue("@IdMateria", filtro.IdMateria.Value);
+    }
+
+    if (filtro.IdModalidad.HasValue && filtro.IdModalidad.Value > 0)
+    {
+        command.Parameters.AddWithValue("@IdModalidad", filtro.IdModalidad.Value);
+    }
+
+    using var reader = await command.ExecuteReaderAsync();
+    while (await reader.ReadAsync())
+    {
+        var dto = new SolicitudTutorDto
         {
-            var sql = @"
-SELECT 
-    t.id_tutoria AS IdTutoria,
-    CONCAT(u.nom_usu, ' ', u.apel_usu) AS NombreTutorado,
-    m.nom_materia AS Materia,
-    t.fecha AS Fecha,
-    CONVERT(VARCHAR(5), t.hora, 108) AS Hora,
-    t.tema AS Tema,
-    t.id_estado AS IdEstado,
-    e.nom_estado AS Estado
-FROM [EduConnect].[dbo].[tutoria] t
-INNER JOIN [EduConnect].[dbo].[usuario] u ON t.id_tutorado = u.id_usu
-INNER JOIN [EduConnect].[dbo].[materia] m ON t.id_materia = m.id_materia
-INNER JOIN [EduConnect].[dbo].[estado] e ON t.id_estado = e.id_estado
-WHERE t.id_tutor = @IdTutor AND t.id_estado = 4"; // SOLO PENDIENTES
+            IdTutoria = reader.GetInt32(reader.GetOrdinal("IdTutoria")),
+            NombreTutorado = reader.GetString(reader.GetOrdinal("NombreTutorado")),
+            Materia = reader.GetString(reader.GetOrdinal("Materia")),
+            Fecha = reader.GetDateTime(reader.GetOrdinal("Fecha")),
+            Hora = reader.GetString(reader.GetOrdinal("Hora")),
+            Tema = reader.GetString(reader.GetOrdinal("Tema")),
+            IdEstado = Convert.ToInt32(reader["IdEstado"]),
+            Estado = reader.GetString(reader.GetOrdinal("Estado")),
+            // Si quieres mostrar la modalidad en el front
+            Modalidad = reader.GetString(reader.GetOrdinal("Modalidad")),
+            IdModalidad = reader.GetInt32(reader.GetOrdinal("IdTutoria"))
+        };
+        lista.Add(dto);
+    }
 
-            // Aplicar filtros si existen
-            if (filtro.IdMateria.HasValue)
-            {
-                sql += " AND t.id_materia = @IdMateria";
-            }
+    return lista;
+}
 
-            if (filtro.Fecha.HasValue)
-            {
-                sql += " AND t.fecha = @Fecha";
-            }
 
-            sql += " ORDER BY t.fecha DESC, t.hora DESC";
-
-            var lista = new List<SolicitudTutorDto>();
-
-            using var connection = _dbContextUtility.GetOpenConnection();
-            using var command = new SqlCommand(sql, connection);
-
-            command.Parameters.AddWithValue("@IdTutor", filtro.IdTutor);
-
-            if (filtro.IdMateria.HasValue)
-            {
-                command.Parameters.AddWithValue("@IdMateria", filtro.IdMateria.Value);
-            }
-
-            if (filtro.Fecha.HasValue)
-            {
-                command.Parameters.AddWithValue("@Fecha", filtro.Fecha.Value);
-            }
-
-            using var reader = await command.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                var dto = new SolicitudTutorDto
-                {
-                    IdTutoria = reader.GetInt32(reader.GetOrdinal("IdTutoria")),
-                    NombreTutorado = reader.GetString(reader.GetOrdinal("NombreTutorado")),
-                    Materia = reader.GetString(reader.GetOrdinal("Materia")),
-                    Fecha = reader.GetDateTime(reader.GetOrdinal("Fecha")),
-                    Hora = reader.GetString(reader.GetOrdinal("Hora")),
-                    Tema = reader.GetString(reader.GetOrdinal("Tema")),
-                    IdEstado = Convert.ToInt32(reader["IdEstado"]),
-                    Estado = reader.GetString(reader.GetOrdinal("Estado"))
-                };
-                lista.Add(dto);
-            }
-
-            return lista;
-        }
 
         // ACEPTAR solicitud - cambia estado a 3
         public async Task<int> AceptarSolicitudTutoria(int idTutoria)
