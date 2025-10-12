@@ -1,5 +1,7 @@
 ﻿using EduConnect_API.Dtos;
 using EduConnect_API.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EduConnect_API.Controllers
@@ -16,7 +18,9 @@ namespace EduConnect_API.Controllers
         }
 
         // trae todas las tutorías del tutorado
+        
         [HttpGet("{idTutorado}/historial")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ObtenerHistorialTutorado(
             int idTutorado,
             [FromQuery] List<int>? idsEstado)
@@ -24,7 +28,9 @@ namespace EduConnect_API.Controllers
             var datos = await _tutoradoService.ObtenerHistorialAsync(idTutorado, idsEstado);
             return Ok(datos);
         }
+        
         [HttpPut("ActualizarPerfil")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> ActualizarPerfil([FromBody] EditarPerfilDto perfil)
         {
             try
@@ -32,9 +38,9 @@ namespace EduConnect_API.Controllers
                 var result = await _tutoradoService.ActualizarPerfilTutorado(perfil);
 
                 if (result > 0)
-                    return Ok("Perfil del tutorado actualizado con éxito");
+                    return Ok("Perfil actualizado con éxito");
                 else
-                    return NotFound("Tutorado no encontrado o no se pudo actualizar");
+                    return NotFound("Usuario no encontrado o no se pudo actualizar");
             }
             catch (ArgumentException ex)
             {
@@ -45,7 +51,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        
         [HttpPost("SolicitudesTutorias")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<IEnumerable<SolicitudTutoriaDto>>> ObtenerSolicitudesTutorias([FromBody] FiltroSolicitudesDto filtro)
         {
             try
@@ -63,6 +71,7 @@ namespace EduConnect_API.Controllers
             }
         }
 
+       
         [HttpGet("EstadosSolicitud")]
         public async Task<ActionResult<IEnumerable<EstadoSolicitudDto>>> ObtenerEstadosSolicitud()
         {
@@ -77,6 +86,7 @@ namespace EduConnect_API.Controllers
             }
         }
         [HttpPost("CrearSolicitudTutoria")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> CrearSolicitudTutoria([FromBody] SolicitudTutoriaRequestDto request)
         {
             try

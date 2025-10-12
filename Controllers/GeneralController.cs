@@ -32,6 +32,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Inicia sesión para un usuario mediante correo y contraseña.
+        /// </summary>
         [HttpPost("IniciarSesión")]
         public async Task<IActionResult> IniciarSesion([FromBody] IniciarSesionDto usuario)
         {
