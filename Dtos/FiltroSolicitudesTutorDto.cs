@@ -4,6 +4,7 @@
     {
         public int IdTutor { get; set; }
         public int? IdMateria { get; set; }
-        public DateTime? Fecha { get; set; }
+        public int? IdModalidad { get; set; }
+        
     }
 }

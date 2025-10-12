@@ -64,7 +64,7 @@ namespace EduConnect_API.Repositories
                             INNER JOIN [EduConnect].[dbo].[estado] AS e ON u.id_estado = e.id_estado
                             INNER JOIN [EduConnect].[dbo].[carrera] AS c ON u.id_carrera = c.id_carrera
                             WHERE 
-                                u.num_ident = num_ident 
+                                u.num_ident = @num_ident 
                                 AND u.contras_usu = @contras_usu
                                 AND u.id_estado = 1";
 
