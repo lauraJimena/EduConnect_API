@@ -119,5 +119,98 @@ namespace EduConnect_API.Services
 
             return await _tutorRepository.ObtenerMateriasTutor(idTutor);
         }
+        public Task<IEnumerable<ObtenerMateriaDto>> BuscarMateriasAsync(FiltrosMateriaDto filtros)
+            => _tutorRepository.BuscarMateriasAsync(filtros);
+
+        public Task<IEnumerable<ObtenerMateriaDto>> ListarMateriasAsignadasAsync(int idUsuario)
+            => _tutorRepository.ListarMateriasAsignadasAsync(idUsuario);
+
+        public async Task<SeleccionarGuardarMateriaResultadoDto> SeleccionarYGuardarAsync(SeleccionarGuardarMateriaDto dto)
+        {
+            if (dto is null) throw new ArgumentNullException(nameof(dto));
+            if (dto.IdUsuario <= 0) throw new ArgumentException("El ID del tutor es obligatorio.");
+            if (dto.IdMaterias == null || dto.IdMaterias.Count == 0)
+                throw new ArgumentException("Debe proporcionar al menos una materia.");
+
+            // --- Validar tutor ---
+            if (!await _tutorRepository.ExisteUsuario(dto.IdUsuario))
+                throw new ArgumentException("El tutor no existe.");
+
+            var rolUsuario = await _tutorRepository.ObtenerRolUsuario(dto.IdUsuario);
+            if (rolUsuario != 2)
+                throw new ArgumentException("El usuario no tiene permisos de tutor.");
+
+            // 🔹 NUEVO: obtener una sola vez la carrera del tutor
+            var idCarreraTutor = await _tutorRepository.ObtenerCarreraDeUsuario(dto.IdUsuario);
+            if (idCarreraTutor is null)
+                throw new ArgumentException("El tutor no tiene una carrera asociada.");
+
+            // --- Límite actual ---
+            var totalActual = await _tutorRepository.ContarMateriasAsignadas(dto.IdUsuario);
+            var restantes = Math.Max(0, 5 - totalActual);
+            if (restantes == 0)
+            {
+                return new SeleccionarGuardarMateriaResultadoDto
+                {
+                    Insertada = false,
+                    Mensaje = "Límite alcanzado: ya tienes 5 materias.",
+                    Totales = totalActual,
+                    Restantes = 0,
+                    MateriasAsignadas = await _tutorRepository.ListarMateriasAsignadasAsync(dto.IdUsuario)
+                };
+            }
+
+            // --- Insertar materias ---
+            foreach (var idMateria in dto.IdMaterias)
+            {
+                if (restantes == 0) break;
+
+                if (!await _tutorRepository.ExisteMateria(idMateria))
+                    continue;
+
+                var idCarreraMateria = await _tutorRepository.ObtenerCarreraPorMateria(idMateria);
+
+                // 🔹 NUEVO: validación negocio → materia debe pertenecer a la MISMA carrera del tutor
+                if (idCarreraMateria != idCarreraTutor)
+                {
+                    return new SeleccionarGuardarMateriaResultadoDto
+                    {
+                        Insertada = false,
+                        Mensaje = "La materia no corresponde a la carrera del tutor.",
+                        Totales = totalActual,
+                        Restantes = restantes,
+                        MateriasAsignadas = await _tutorRepository.ListarMateriasAsignadasAsync(dto.IdUsuario)
+                    };
+                }
+
+                // Duplicado
+                if (await _tutorRepository.ExisteAsignacion(dto.IdUsuario, idMateria))
+                    continue;
+
+                // Siempre insertar con la carrera de la MATERIA (no la que envíe el cliente)
+                await _tutorRepository.SeleccionarYGuardarAsync(new SeleccionarGuardarMateriaDto
+                {
+                    IdUsuario = dto.IdUsuario,
+                    IdMaterias = new List<int> { idMateria },
+                    IdCarrera = idCarreraMateria
+                });
+
+                totalActual = await _tutorRepository.ContarMateriasAsignadas(dto.IdUsuario);
+                restantes = Math.Max(0, 5 - totalActual);
+            }
+
+            return new SeleccionarGuardarMateriaResultadoDto
+            {
+                Insertada = true,
+                Mensaje = "Materias asignadas correctamente.",
+                Totales = totalActual,
+                Restantes = restantes,
+                MateriasAsignadas = await _tutorRepository.ListarMateriasAsignadasAsync(dto.IdUsuario)
+            };
+        }
+
+
+
+
     }
 }

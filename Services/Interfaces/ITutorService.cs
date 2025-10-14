@@ -16,6 +16,11 @@ namespace EduConnect_API.Services.Interfaces
         Task<int> RechazarSolicitudTutoria(int idTutoria);
         Task<DetalleSolicitudTutoriaDto> ObtenerDetalleSolicitud(int idTutoria);
         Task<IEnumerable<MateriaDto>> ObtenerMateriasTutor(int idTutor);
+        Task<IEnumerable<ObtenerMateriaDto>> BuscarMateriasAsync(FiltrosMateriaDto filtros);
+        Task<IEnumerable<ObtenerMateriaDto>> ListarMateriasAsignadasAsync(int idUsuario);
+
+        Task<SeleccionarGuardarMateriaResultadoDto> SeleccionarYGuardarAsync(SeleccionarGuardarMateriaDto dto);
+
 
     }
 }

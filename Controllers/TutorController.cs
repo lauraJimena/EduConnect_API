@@ -31,7 +31,7 @@ namespace EduConnect_API.Controllers
         private static string? Clean(string? s)
             => string.IsNullOrWhiteSpace(s) || s?.Trim().ToLower() == "string" ? null : s;
 
-        [HttpPost("obtener")]
+        [HttpPost("BuscarTutor")]
         public async Task<IActionResult> Obtener([FromBody] BuscarTutorDto filtros)
         {
             filtros.Nombre = Clean(filtros.Nombre);
@@ -164,6 +164,35 @@ namespace EduConnect_API.Controllers
             {
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
+        }
+        // 🔹 Buscar materias por filtros (nombre, semestre, carrera)
+        [HttpPost("BuscarMaterias")]
+        public async Task<IActionResult> BuscarMaterias([FromBody] FiltrosMateriaDto filtros)
+        {
+            filtros.MateriaNombre = Clean(filtros.MateriaNombre);
+            filtros.Semestre = Clean(filtros.Semestre);
+            filtros.CarreraNombre = Clean(filtros.CarreraNombre);
+
+            var resultado = await _tutorService.BuscarMateriasAsync(filtros);
+            return Ok(resultado);
+        }
+
+        // 🔹 Listar las materias ya asignadas al tutor
+        [HttpGet("ObtenerAsignadas")]
+        public async Task<IActionResult> ObtenerAsignadas(int idUsuario)
+        {
+            var resultado = await _tutorService.ListarMateriasAsignadasAsync(idUsuario);
+            return Ok(resultado);
+        }
+
+        // 🔹 Guardar selección (máximo 5 materias)
+        [HttpPost("SeleccionarGuardarMateria")]
+        public async Task<IActionResult> SeleccionarGuardarMateria([FromBody] SeleccionarGuardarMateriaDto dto)
+        {
+            
+
+            var resultado = await _tutorService.SeleccionarYGuardarAsync(dto);
+            return Ok(resultado);
         }
     }
 }

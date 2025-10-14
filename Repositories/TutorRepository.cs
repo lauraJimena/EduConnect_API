@@ -2,6 +2,7 @@
 using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Utilities;
 using Microsoft.Data.SqlClient;
+using System.Data;
 using System.Text;
 
 namespace EduConnect_API.Repositories
@@ -128,10 +129,15 @@ WHERE
     AND (@Semestre IS NULL OR s.num_semestre = @Semestre)
     AND (NULLIF(@Carrera, N'') IS NULL OR c.nom_carrera  LIKE N'%' + @Carrera + N'%')
     AND (@Estado   IS NULL OR u.id_estado = @Estado)
-ORDER BY u.nom_usu, u.apel_usu, m.nom_materia;";
+ORDER BY u.nom_usu, u.apel_usu, m.nom_materia
+OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
 
             using var connection = _dbContextUtility.GetOpenConnection();
             using var command = new SqlCommand(sql, connection);
+
+            int skip = (filtros.Page - 1) * filtros.PageSize;
+            command.Parameters.AddWithValue("@Skip", skip);
+            command.Parameters.AddWithValue("@Take", filtros.PageSize);
 
             command.Parameters.AddWithValue("@Nombre", (object?)filtros.Nombre ?? DBNull.Value);
             command.Parameters.AddWithValue("@Materia", (object?)filtros.MateriaNombre ?? DBNull.Value);
@@ -369,13 +375,13 @@ WHERE t.id_tutoria = @id_tutoria";
         public async Task<IEnumerable<MateriaDto>> ObtenerMateriasTutor(int idTutor)
         {
             const string sql = @"
-SELECT DISTINCT
-    m.id_materia AS IdMateria,
-    m.nom_materia AS NombreMateria
-FROM [EduConnect].[dbo].[tutoria] t
-INNER JOIN [EduConnect].[dbo].[materia] m ON t.id_materia = m.id_materia
-WHERE t.id_tutor = @id_tutor
-ORDER BY m.nom_materia";
+            SELECT DISTINCT
+                m.id_materia AS IdMateria,
+                m.nom_materia AS NombreMateria
+            FROM [EduConnect].[dbo].[tutoria] t
+            INNER JOIN [EduConnect].[dbo].[materia] m ON t.id_materia = m.id_materia
+            WHERE t.id_tutor = @id_tutor
+            ORDER BY m.nom_materia";
 
             var lista = new List<MateriaDto>();
 
@@ -390,6 +396,238 @@ ORDER BY m.nom_materia";
                 {
                     IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria")),
                     NombreMateria = reader.GetString(reader.GetOrdinal("NombreMateria"))
+                });
+            }
+
+            return lista;
+        }
+
+        public async Task<IEnumerable<ObtenerMateriaDto>> BuscarMateriasAsync(FiltrosMateriaDto filtros)
+        {
+            var lista = new List<ObtenerMateriaDto>();
+
+            var sql = @"
+                SELECT
+                    m.id_materia                         AS IdMateria,
+                    m.nom_materia                        AS MateriaNombre,
+                    c.nom_carrera                        AS CarreraNombre,
+                    CAST(s.num_semestre AS nvarchar(5))  AS Semestre
+                FROM dbo.materia m
+                INNER JOIN dbo.semestre s ON s.id_semestre = m.id_semestre
+                INNER JOIN dbo.carrera  c ON c.id_carrera  = m.id_carrera
+                WHERE
+                    (NULLIF(@MateriaNombre,'') IS NULL OR m.nom_materia LIKE '%' + @MateriaNombre + '%')
+                    AND (NULLIF(@Semestre,'')      IS NULL OR CAST(s.num_semestre AS nvarchar(5)) LIKE '%' + @Semestre + '%')
+                    AND (NULLIF(@CarreraNombre,'') IS NULL OR c.nom_carrera LIKE '%' + @CarreraNombre + '%')
+                ORDER BY c.nom_carrera, s.num_semestre, m.nom_materia
+                OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            if (connection.State != ConnectionState.Open)
+                await connection.OpenAsync();
+
+            using var command = new SqlCommand(sql, connection);
+
+            int skip = (filtros.Page - 1) * filtros.PageSize;
+
+            command.Parameters.AddWithValue("@MateriaNombre", (object?)filtros.MateriaNombre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Semestre", (object?)filtros.Semestre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@CarreraNombre", (object?)filtros.CarreraNombre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Skip", skip);
+            command.Parameters.AddWithValue("@Take", filtros.PageSize);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                lista.Add(new ObtenerMateriaDto
+                {
+                    IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria")),
+                    MateriaNombre = reader.GetString(reader.GetOrdinal("MateriaNombre")),
+                    CarreraNombre = reader.GetString(reader.GetOrdinal("CarreraNombre")),
+                    Semestre = reader.GetString(reader.GetOrdinal("Semestre"))
+                });
+            }
+
+            return lista;
+        }
+
+        public async Task<IEnumerable<ObtenerMateriaDto>> ListarMateriasAsignadasAsync(int idUsuario)
+        {
+            var lista = new List<ObtenerMateriaDto>();
+
+            var sql = @"
+                SELECT
+                    m.id_materia                         AS IdMateria,
+                    m.nom_materia                        AS MateriaNombre,
+                    c.nom_carrera                        AS CarreraNombre,
+                    CAST(s.num_semestre AS nvarchar(5))  AS Semestre
+                FROM dbo.tutor_materia tm
+                INNER JOIN dbo.materia  m ON m.id_materia  = tm.id_materia
+                INNER JOIN dbo.semestre s ON s.id_semestre = m.id_semestre
+                INNER JOIN dbo.carrera  c ON c.id_carrera  = m.id_carrera
+                WHERE tm.id_usu = @IdUsuario
+                ORDER BY c.nom_carrera, s.num_semestre, m.nom_materia;";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            if (connection.State != ConnectionState.Open)
+                await connection.OpenAsync();
+
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@IdUsuario", idUsuario);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                lista.Add(new ObtenerMateriaDto
+                {
+                    IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria")),
+                    MateriaNombre = reader.GetString(reader.GetOrdinal("MateriaNombre")),
+                    CarreraNombre = reader.GetString(reader.GetOrdinal("CarreraNombre")),
+                    Semestre = reader.GetString(reader.GetOrdinal("Semestre"))
+                });
+            }
+
+            return lista;
+        }
+
+        public async Task<SeleccionarGuardarMateriaResultadoDto> SeleccionarYGuardarAsync(SeleccionarGuardarMateriaDto dto)
+        {
+            var resultado = new SeleccionarGuardarMateriaResultadoDto();
+
+            // ✅ tomar UN id de la lista
+            var idMateria = dto.IdMaterias?.FirstOrDefault() ?? 0;
+            if (idMateria <= 0)
+                throw new ArgumentException("IdMaterias no puede estar vacío.", nameof(dto.IdMaterias));
+            if (!dto.IdCarrera.HasValue)
+                throw new ArgumentException("IdCarrera es requerido para insertar.");
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            if (connection.State != ConnectionState.Open)
+                await connection.OpenAsync();
+
+            using var tx = connection.BeginTransaction();
+            try
+            {
+                // Insertar
+                using (var cmd = new SqlCommand(
+                    "INSERT INTO dbo.tutor_materia(id_usu, id_materia, id_carrera) VALUES(@u,@m,@c);",
+                    connection, tx))
+                {
+                    cmd.Parameters.Add("@u", SqlDbType.Int).Value = dto.IdUsuario;
+                    cmd.Parameters.Add("@m", SqlDbType.Int).Value = idMateria;               // ✅ int, no List<int>
+                    cmd.Parameters.Add("@c", SqlDbType.Int).Value = dto.IdCarrera.Value;
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Totales y lista
+                int totales;
+                using (var cmd = new SqlCommand(
+                    "SELECT COUNT(*) FROM dbo.tutor_materia WHERE id_usu=@u;",
+                    connection, tx))
+                {
+                    cmd.Parameters.Add("@u", SqlDbType.Int).Value = dto.IdUsuario;
+                    totales = (int)(await cmd.ExecuteScalarAsync() ?? 0);
+                }
+
+                resultado.Insertada = true;
+                resultado.Mensaje = "Materia agregada correctamente.";
+                resultado.Totales = totales;
+                resultado.Restantes = Math.Max(0, 5 - totales);
+                resultado.MateriasAsignadas =
+                    await ListarMateriasAsignadasInterno(dto.IdUsuario, connection, tx);
+
+                tx.Commit();
+                return resultado;
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
+        }
+        public async Task<bool> ExisteMateria(int idMateria)
+        {
+            using var cn = _dbContextUtility.GetOpenConnection();
+            using var cmd = new SqlCommand("SELECT 1 FROM dbo.materia WHERE id_materia=@id;", cn);
+            cmd.Parameters.AddWithValue("@id", idMateria);
+            var obj = await cmd.ExecuteScalarAsync();
+            return obj != null;
+        }
+
+        public async Task<int> ObtenerCarreraPorMateria(int idMateria)
+        {
+            using var cn = _dbContextUtility.GetOpenConnection();
+            using var cmd = new SqlCommand("SELECT id_carrera FROM dbo.materia WHERE id_materia=@id;", cn);
+            cmd.Parameters.AddWithValue("@id", idMateria);
+            var obj = await cmd.ExecuteScalarAsync();
+            if (obj == null) throw new InvalidOperationException("La materia no existe.");
+            return Convert.ToInt32(obj);
+        }
+
+        public async Task<int> ContarMateriasAsignadas(int idUsuario)
+        {
+            using var cn = _dbContextUtility.GetOpenConnection();
+            using var cmd = new SqlCommand("SELECT COUNT(*) FROM dbo.tutor_materia WHERE id_usu=@u;", cn);
+            cmd.Parameters.AddWithValue("@u", idUsuario);
+            var obj = await cmd.ExecuteScalarAsync();
+            return (int)(obj ?? 0);
+        }
+
+        public async Task<bool> ExisteAsignacion(int idUsuario, int idMateria)
+        {
+            using var cn = _dbContextUtility.GetOpenConnection();
+            using var cmd = new SqlCommand(
+                "SELECT 1 FROM dbo.tutor_materia WHERE id_usu=@u AND id_materia=@m;", cn);
+            cmd.Parameters.AddWithValue("@u", idUsuario);
+            cmd.Parameters.AddWithValue("@m", idMateria);
+            var obj = await cmd.ExecuteScalarAsync();
+            return obj != null;
+        }
+        public async Task<int?> ObtenerCarreraDeUsuario(int idUsuario)
+        {
+            using var cn = _dbContextUtility.GetOpenConnection();
+            using var cmd = new SqlCommand("SELECT id_carrera FROM dbo.usuario WHERE id_usu = @id;", cn);
+            cmd.Parameters.AddWithValue("@id", idUsuario);
+
+            var obj = await cmd.ExecuteScalarAsync();
+            if (obj == null || obj == DBNull.Value)
+                return null;
+
+            return Convert.ToInt32(obj);
+        }
+
+
+        // Reusar SELECT de asignadas dentro de la misma tx
+        private static async Task<IEnumerable<ObtenerMateriaDto>> ListarMateriasAsignadasInterno(
+            int idUsuario, SqlConnection connection, SqlTransaction transaction)
+        {
+            var lista = new List<ObtenerMateriaDto>();
+
+            var sql = @"
+                SELECT
+                    m.id_materia                        AS IdMateria,
+                    m.nom_materia                       AS MateriaNombre,
+                    c.nom_carrera                       AS CarreraNombre,
+                    CAST(s.num_semestre AS nvarchar(5)) AS Semestre
+                FROM dbo.tutor_materia tm
+                JOIN dbo.materia  m ON m.id_materia  = tm.id_materia
+                JOIN dbo.semestre s ON s.id_semestre = m.id_semestre
+                JOIN dbo.carrera  c ON c.id_carrera  = m.id_carrera
+                WHERE tm.id_usu = @IdUsuario
+                ORDER BY c.nom_carrera, s.num_semestre, m.nom_materia;";
+
+            using var command = new SqlCommand(sql, connection, transaction);
+            command.Parameters.AddWithValue("@IdUsuario", idUsuario);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                lista.Add(new ObtenerMateriaDto
+                {
+                    IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria")),
+                    MateriaNombre = reader.GetString(reader.GetOrdinal("MateriaNombre")),
+                    CarreraNombre = reader.GetString(reader.GetOrdinal("CarreraNombre")),
+                    Semestre = reader.GetString(reader.GetOrdinal("Semestre"))
                 });
             }
 
