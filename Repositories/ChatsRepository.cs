@@ -64,7 +64,6 @@ namespace EduConnect_API.Repositories
         {
             var chats = new List<ObtenerChatDto>();
 
-            // ✅ Obtener el rol desde la tabla usuario
             var rolUsuario = await ObtenerRolUsuarioAsync(usuarioId);
 
             string sql;
@@ -72,23 +71,36 @@ namespace EduConnect_API.Repositories
             if (rolUsuario == "Tutorado")
             {
                 sql = @"
-            SELECT c.id_chat, c.id_tutoria, c.fecha_creacion
-            FROM chat c
-            INNER JOIN tutoria t ON c.id_tutoria = t.id_tutoria
-            WHERE t.id_tutorado = @idUsuario";
+        SELECT 
+            c.id_chat, 
+            c.id_tutoria, 
+            c.fecha_creacion,
+            u.nom_usu + ' ' + u.apel_usu AS NombreReceptor,  -- El Tutor
+            m.nom_materia AS NombreMateria
+        FROM chat c
+        INNER JOIN tutoria t ON c.id_tutoria = t.id_tutoria
+        INNER JOIN usuario u ON u.id_usu = t.id_tutor         -- Tutor
+        INNER JOIN materia m ON m.id_materia = t.id_materia
+        WHERE t.id_tutorado = @idUsuario";
             }
             else if (rolUsuario == "Tutor")
             {
                 sql = @"
-            SELECT c.id_chat, c.id_tutoria, c.fecha_creacion
-            FROM chat c
-            INNER JOIN tutoria t ON c.id_tutoria = t.id_tutoria
-            WHERE t.id_tutor = @idUsuario";
+        SELECT 
+            c.id_chat, 
+            c.id_tutoria, 
+            c.fecha_creacion,
+            u.nom_usu + ' ' + u.apel_usu AS NombreReceptor,  -- El Tutorado
+            m.nom_materia AS NombreMateria
+        FROM chat c
+        INNER JOIN tutoria t ON c.id_tutoria = t.id_tutoria
+        INNER JOIN usuario u ON u.id_usu = t.id_tutorado      -- Tutorado
+        INNER JOIN materia m ON m.id_materia = t.id_materia
+        WHERE t.id_tutor = @idUsuario";
             }
             else
             {
-                // ✅ Si el rol no es válido, no hay chats
-                return chats;
+                return chats; // No hay chats para otros roles
             }
 
             using var connection = _dbContextUtility.GetOpenConnection();
@@ -102,12 +114,15 @@ namespace EduConnect_API.Repositories
                 {
                     IdChat = reader.GetInt32(0),
                     IdTutoria = reader.GetInt32(1),
-                    FechaCreacion = reader.GetDateTime(2)
+                    FechaCreacion = reader.GetDateTime(2),
+                    NombreReceptor = reader.GetString(3),
+                    NombreMateria = reader.GetString(4)
                 });
             }
 
             return chats;
         }
+
 
         public async Task<string> ObtenerRolUsuarioAsync(int usuarioId)
         {

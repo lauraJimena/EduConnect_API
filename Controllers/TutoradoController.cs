@@ -11,10 +11,12 @@ namespace EduConnect_API.Controllers
     public class TutoradoController : Controller
     {
         private readonly ITutoradoService _tutoradoService;
+        private readonly IChatsService _chatsService;
 
-        public TutoradoController(ITutoradoService tutoradoService)
+        public TutoradoController(ITutoradoService tutoradoService, IChatsService chatsService)
         {
             _tutoradoService = tutoradoService;
+            _chatsService = chatsService;
         }
 
         // trae todas las tutorías del tutorado
@@ -85,7 +87,7 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-        [HttpPost("CrearSolicitudTutoria")]
+        /*[HttpPost("CrearSolicitudTutoria")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> CrearSolicitudTutoria([FromBody] SolicitudTutoriaRequestDto request)
         {
@@ -106,11 +108,47 @@ namespace EduConnect_API.Controllers
             {
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
+        }*/
+
+        [HttpPost("CrearSolicitudTutoria")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ActionResult> CrearSolicitudTutoria([FromBody] SolicitudTutoriaRequestDto request)
+        {
+            try
+            {
+                var idTutoria = await _tutoradoService.CrearSolicitudTutoria(request);
+
+                if (idTutoria > 0)
+                {
+                    // ✅ Crear el chat automáticamente vinculado a la tutoría
+                    await _chatsService.CrearChat(new CrearChatDto
+                    {
+                        IdTutoria = idTutoria,
+                        FechaCreacion = DateTime.Now
+                    });
+
+                    // ✅ Devolver el ID al frontend si lo necesitas para navegación
+                    return Ok(new { mensaje = "Solicitud de tutoría creada con éxito. Estado: Pendiente", idTutoria });
+                }
+                else
+                {
+                    return BadRequest("No se pudo crear la solicitud de tutoría");
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
         }
+
     }
 
-        
-    }
+
+}
 
 
 
