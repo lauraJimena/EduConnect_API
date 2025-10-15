@@ -2,6 +2,7 @@
 using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Utilities;
 using Microsoft.Data.SqlClient;
+using System.Data;
 using System.Text;
 
 namespace EduConnect_API.Repositories
@@ -102,20 +103,11 @@ namespace EduConnect_API.Repositories
         }
         public async Task<int> ActualizarPerfil(EditarPerfilDto perfil)
         {
-            const string sql = @"
-UPDATE [EduConnect].[dbo].[usuario]
-SET nom_usu = @nom_usu,
-    apel_usu = @apel_usu,
-    id_tipo_ident = @id_tipo_ident,
-    num_ident = @num_ident,
-    correo_usu = @correo_usu,
-    tel_usu = @tel_usu
-WHERE id_usu = @id_usu";
 
             try
             {
                 using var connection = _dbContextUtility.GetOpenConnection();
-                using var command = new SqlCommand(sql, connection);
+                using var command = new SqlCommand("dbo.usp_Usuario_ActualizarPerfil", connection);
 
                 command.Parameters.AddWithValue("@id_usu", perfil.IdUsu);
                 command.Parameters.AddWithValue("@nom_usu", perfil.Nombre);
@@ -154,6 +146,43 @@ WHERE id_usu = @id_usu";
 
             var result = await command.ExecuteScalarAsync();
             return result != null ? Convert.ToInt32(result) : 0;
+        }
+        public async Task<IEnumerable<ObtenerTutorDto>> ObtenerTutoresAsync(BuscarTutorDto filtros)
+        {
+            var lista = new List<ObtenerTutorDto>();
+
+                
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand("dbo.usp_Tutores_ListarMaterias", connection);
+            command.CommandType = CommandType.StoredProcedure;
+
+            int skip = (filtros.Page - 1) * filtros.PageSize;
+            command.Parameters.AddWithValue("@Skip", skip);
+            command.Parameters.AddWithValue("@Take", filtros.PageSize);
+
+            command.Parameters.AddWithValue("@Nombre", (object?)filtros.Nombre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Materia", (object?)filtros.MateriaNombre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Semestre", (object?)filtros.Semestre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Carrera", (object?)filtros.CarreraNombre ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Estado", (object?)filtros.IdEstado ?? DBNull.Value);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                lista.Add(new ObtenerTutorDto
+                {
+                    IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
+                    TutorNombreCompleto = reader.GetString(reader.GetOrdinal("TutorNombreCompleto")),
+                    IdEstado = reader.GetInt32(reader.GetOrdinal("Estado")),
+                    MateriaNombre = reader.GetString(reader.GetOrdinal("Materia")),
+                    Semestre = reader.GetByte(reader.GetOrdinal("Semestre")),
+                    CarreraNombre = reader.GetString(reader.GetOrdinal("Carrera")),
+                    IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria"))
+                });
+            }
+
+            return lista;
         }
         public async Task<IEnumerable<SolicitudTutoriaDto>> ObtenerSolicitudesTutorias(FiltroSolicitudesDto filtro)
         {

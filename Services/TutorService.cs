@@ -19,9 +19,7 @@ namespace EduConnect_API.Services
 
             return await _tutorRepository.ObtenerHistorialTutorAsync(idTutor, estados);
         }
-
-        public Task<IEnumerable<ObtenerTutorDto>> ObtenerTutoresAsync(BuscarTutorDto filtros)
-            => _tutorRepository.ObtenerTutoresAsync(filtros);
+       
 
         public async Task<int> ActualizarPerfilTutor(EditarPerfilDto tutor)
         {

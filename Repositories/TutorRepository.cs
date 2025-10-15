@@ -103,65 +103,6 @@ namespace EduConnect_API.Repositories
             return lista;
         }
 
-
-        public async Task<IEnumerable<ObtenerTutorDto>> ObtenerTutoresAsync(BuscarTutorDto filtros)
-        {
-            var lista = new List<ObtenerTutorDto>();
-
-            var sql = @"
-               SELECT 
-    u.id_usu                               AS IdUsuario,
-    (u.nom_usu + ' ' + u.apel_usu)         AS TutorNombreCompleto,
-    CAST(u.id_estado AS int)               AS Estado,
-    m.nom_materia                          AS Materia,
-    s.num_semestre                         AS Semestre,
-    c.nom_carrera                          AS Carrera,
-    m.id_materia                           AS IdMateria
-FROM dbo.usuario AS u
-INNER JOIN dbo.tutor_materia AS tm ON tm.id_usu     = u.id_usu
-INNER JOIN dbo.materia       AS m  ON m.id_materia  = tm.id_materia
-INNER JOIN dbo.semestre      AS s  ON s.id_semestre = m.id_semestre
-INNER JOIN dbo.carrera       AS c  ON c.id_carrera  = m.id_carrera
-WHERE
-    u.id_rol = 2
-    AND (NULLIF(@Nombre,  N'') IS NULL OR (u.nom_usu + ' ' + u.apel_usu) LIKE N'%' + @Nombre + N'%')
-    AND (NULLIF(@Materia, N'') IS NULL OR m.nom_materia  LIKE N'%' + @Materia + N'%')
-    AND (@Semestre IS NULL OR s.num_semestre = @Semestre)
-    AND (NULLIF(@Carrera, N'') IS NULL OR c.nom_carrera  LIKE N'%' + @Carrera + N'%')
-    AND (@Estado   IS NULL OR u.id_estado = @Estado)
-ORDER BY u.nom_usu, u.apel_usu, m.nom_materia
-OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
-
-            using var connection = _dbContextUtility.GetOpenConnection();
-            using var command = new SqlCommand(sql, connection);
-
-            int skip = (filtros.Page - 1) * filtros.PageSize;
-            command.Parameters.AddWithValue("@Skip", skip);
-            command.Parameters.AddWithValue("@Take", filtros.PageSize);
-
-            command.Parameters.AddWithValue("@Nombre", (object?)filtros.Nombre ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Materia", (object?)filtros.MateriaNombre ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Semestre", (object?)filtros.Semestre ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Carrera", (object?)filtros.CarreraNombre ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Estado", (object?)filtros.IdEstado ?? DBNull.Value);
-
-            using var reader = await command.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                lista.Add(new ObtenerTutorDto
-                {
-                    IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
-                    TutorNombreCompleto = reader.GetString(reader.GetOrdinal("TutorNombreCompleto")),
-                    IdEstado = reader.GetInt32(reader.GetOrdinal("Estado")),
-                    MateriaNombre = reader.GetString(reader.GetOrdinal("Materia")),
-                    Semestre = reader.GetByte(reader.GetOrdinal("Semestre")),
-                    CarreraNombre = reader.GetString(reader.GetOrdinal("Carrera")),
-                    IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria"))
-                });
-            }
-
-            return lista;
-        }
         public async Task<int> ActualizarPerfilTutor(EditarPerfilDto tutor)
         {
             const string sql = @"
@@ -329,26 +270,11 @@ WHERE id_tutoria = @id_tutoria AND id_estado = 4"; // Solo actualiza si está pe
         // DETALLE de solicitud - SOLO con id_tutoria
         public async Task<DetalleSolicitudTutoriaDto> ObtenerDetalleSolicitud(int idTutoria)
         {
-            const string sql = @"
-SELECT 
-    CONCAT(u.nom_usu, ' ', u.apel_usu) AS NombreTutorado,
-    t.fecha AS Fecha,
-    CONVERT(VARCHAR(5), t.hora, 108) AS Hora,
-    m.nom_materia AS Materia,
-    t.tema AS Tema,
-    mo.nom_modalidad AS Modalidad,
-    ISNULL(t.comentario_adic, '') AS ComentarioAdicional,
-    t.id_estado AS IdEstado,
-    e.nom_estado AS Estado
-FROM [EduConnect].[dbo].[tutoria] t
-INNER JOIN [EduConnect].[dbo].[usuario] u ON t.id_tutorado = u.id_usu
-INNER JOIN [EduConnect].[dbo].[materia] m ON t.id_materia = m.id_materia
-INNER JOIN [EduConnect].[dbo].[modalidad] mo ON t.id_modalidad = mo.id_modalidad
-INNER JOIN [EduConnect].[dbo].[estado] e ON t.id_estado = e.id_estado
-WHERE t.id_tutoria = @id_tutoria";
-
+            
             using var connection = _dbContextUtility.GetOpenConnection();
-            using var command = new SqlCommand(sql, connection);
+            using var command = new SqlCommand("dbo.usp_Tutoria_ObtenerDetalleSolicitud", connection);
+            command.CommandType = CommandType.StoredProcedure;
+
             command.Parameters.AddWithValue("@id_tutoria", idTutoria);
 
             using var reader = await command.ExecuteReaderAsync();
