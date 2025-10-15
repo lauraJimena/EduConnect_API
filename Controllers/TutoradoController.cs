@@ -1,4 +1,5 @@
 ﻿using EduConnect_API.Dtos;
+using EduConnect_API.Services;
 using EduConnect_API.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -75,6 +76,7 @@ namespace EduConnect_API.Controllers
 
        
         [HttpGet("EstadosSolicitud")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<IEnumerable<EstadoSolicitudDto>>> ObtenerEstadosSolicitud()
         {
             try
@@ -109,6 +111,22 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }*/
+        private static string? Clean(string? s)
+            => string.IsNullOrWhiteSpace(s) || s?.Trim().ToLower() == "string" ? null : s;
+
+        [HttpPost("BuscarTutor")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> Obtener([FromBody] BuscarTutorDto filtros)
+        {
+            filtros.Nombre = Clean(filtros.Nombre);
+            filtros.MateriaNombre = Clean(filtros.MateriaNombre);
+            filtros.Semestre = Clean(filtros.Semestre);
+            filtros.CarreraNombre = Clean(filtros.CarreraNombre);
+            if (filtros.IdEstado.HasValue && filtros.IdEstado.Value <= 0) filtros.IdEstado = null;
+
+            var resultado = await _tutoradoService.ObtenerTutoresAsync(filtros);
+            return Ok(resultado);
+        }
 
         [HttpPost("CrearSolicitudTutoria")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]

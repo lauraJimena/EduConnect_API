@@ -7,6 +7,7 @@ namespace EduConnect_API.Services.Interfaces
         Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialAsync(int idTutorado, List<int>? idsEstado);
        
         Task<int> ActualizarPerfilTutorado(EditarPerfilDto tutorado);
+        Task<IEnumerable<ObtenerTutorDto>> ObtenerTutoresAsync(BuscarTutorDto filtros);
         Task<IEnumerable<SolicitudTutoriaDto>> ObtenerSolicitudesTutorias(FiltroSolicitudesDto filtro);
         Task<IEnumerable<EstadoSolicitudDto>> ObtenerEstadosSolicitud();
         Task<int> CrearSolicitudTutoria(SolicitudTutoriaRequestDto solicitud);

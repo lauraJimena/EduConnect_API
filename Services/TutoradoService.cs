@@ -20,6 +20,39 @@ namespace EduConnect_API.Services
 
         public Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialAsync(int idTutorado, List<int>? idsEstado)
             => _tutoradoRepository.ObtenerHistorialTutoradoAsync(idTutorado, idsEstado);
+        public async Task<IEnumerable<ObtenerTutorDto>> ObtenerTutoresAsync(BuscarTutorDto filtros)
+        {
+            if (filtros == null)
+                throw new ArgumentNullException(nameof(filtros));
+
+            // --- Validación de paginación ---
+            if (filtros.Page <= 0)
+                filtros.Page = 1;
+
+            if (filtros.PageSize <= 0)
+                filtros.PageSize = 20;
+            else if (filtros.PageSize > 100)
+                filtros.PageSize = 100;
+
+            // --- Validaciones básicas de texto ---
+            if (!string.IsNullOrWhiteSpace(filtros.Nombre) && filtros.Nombre.Length < 2)
+                throw new ArgumentException("El nombre debe tener al menos 2 caracteres para buscar.");
+
+            if (!string.IsNullOrWhiteSpace(filtros.MateriaNombre) && filtros.MateriaNombre.Length < 2)
+                throw new ArgumentException("La materia debe tener al menos 2 caracteres para buscar.");
+
+            if (!string.IsNullOrWhiteSpace(filtros.CarreraNombre) && filtros.CarreraNombre.Length < 2)
+                throw new ArgumentException("La carrera debe tener al menos 2 caracteres para buscar.");
+
+            // --- Validaciones numéricas --
+
+            if (filtros.IdEstado.HasValue && filtros.IdEstado < 0)
+                throw new ArgumentException("El estado es inválido.");
+
+            // --- Llamada al repositorio ---
+            return await _tutoradoRepository.ObtenerTutoresAsync(filtros);
+        }
+
         public async Task<int> ActualizarPerfilTutorado(EditarPerfilDto tutorado)
         {
             // Validación de ID

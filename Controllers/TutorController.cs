@@ -1,6 +1,8 @@
 ﻿using EduConnect_API.Dtos;
 using EduConnect_API.Services;
 using EduConnect_API.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EduConnect_API.Controllers
@@ -15,6 +17,7 @@ namespace EduConnect_API.Controllers
 
         // Trae historial del tutor filtrado por múltiples estados
         [HttpGet("{idTutor}/historial/")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ObtenerHistorialFiltradoTutor(
             int idTutor,
             [FromQuery] List<int>? idEstados)
@@ -31,19 +34,9 @@ namespace EduConnect_API.Controllers
         private static string? Clean(string? s)
             => string.IsNullOrWhiteSpace(s) || s?.Trim().ToLower() == "string" ? null : s;
 
-        [HttpPost("BuscarTutor")]
-        public async Task<IActionResult> Obtener([FromBody] BuscarTutorDto filtros)
-        {
-            filtros.Nombre = Clean(filtros.Nombre);
-            filtros.MateriaNombre = Clean(filtros.MateriaNombre);
-            filtros.Semestre = Clean(filtros.Semestre);
-            filtros.CarreraNombre = Clean(filtros.CarreraNombre);
-            if (filtros.IdEstado.HasValue && filtros.IdEstado.Value <= 0) filtros.IdEstado = null;
-
-            var resultado = await _tutorService.ObtenerTutoresAsync(filtros);
-            return Ok(resultado);
-        }
+        
         [HttpPut("ActualizarPerfil")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> ActualizarPerfil([FromBody] EditarPerfilDto perfil)
         {
             try
@@ -65,6 +58,7 @@ namespace EduConnect_API.Controllers
             }
         }
         [HttpPost("SolicitudesTutorias")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<IEnumerable<SolicitudTutorDto>>> ObtenerSolicitudesTutorias([FromBody] FiltroSolicitudesTutorDto filtro)
         {
             try
@@ -84,6 +78,7 @@ namespace EduConnect_API.Controllers
 
         // ACEPTAR solicitud - SOLO id_tutoria
         [HttpPut("AceptarSolicitudTutoria")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> AceptarSolicitudTutoria([FromBody] ActualizarEstadoSolicitudDto request)
         {
             try
@@ -107,6 +102,7 @@ namespace EduConnect_API.Controllers
 
         // RECHAZAR solicitud - SOLO id_tutoria
         [HttpPut("RechazarSolicitudTutoria")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> RechazarSolicitudTutoria([FromBody] ActualizarEstadoSolicitudDto request)
         {
             try
@@ -130,6 +126,7 @@ namespace EduConnect_API.Controllers
 
         // DETALLE de solicitud - SOLO id_tutoria en la ruta
         [HttpGet("DetalleSolicitud/{idTutoria}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<DetalleSolicitudTutoriaDto>> ObtenerDetalleSolicitud(int idTutoria)
         {
             try
@@ -149,6 +146,7 @@ namespace EduConnect_API.Controllers
 
         // MATERIAS para filtros
         [HttpGet("MateriasTutor/{idTutor}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<IEnumerable<MateriaDto>>> ObtenerMateriasTutor(int idTutor)
         {
             try
@@ -167,6 +165,7 @@ namespace EduConnect_API.Controllers
         }
         // 🔹 Buscar materias por filtros (nombre, semestre, carrera)
         [HttpPost("BuscarMaterias")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> BuscarMaterias([FromBody] FiltrosMateriaDto filtros)
         {
             filtros.MateriaNombre = Clean(filtros.MateriaNombre);
@@ -179,6 +178,7 @@ namespace EduConnect_API.Controllers
 
         // 🔹 Listar las materias ya asignadas al tutor
         [HttpGet("ObtenerAsignadas")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ObtenerAsignadas(int idUsuario)
         {
             var resultado = await _tutorService.ListarMateriasAsignadasAsync(idUsuario);
@@ -187,6 +187,7 @@ namespace EduConnect_API.Controllers
 
         // 🔹 Guardar selección (máximo 5 materias)
         [HttpPost("SeleccionarGuardarMateria")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> SeleccionarGuardarMateria([FromBody] SeleccionarGuardarMateriaDto dto)
         {
             
