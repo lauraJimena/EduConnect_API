@@ -1,4 +1,5 @@
 ﻿using EduConnect_API.Dtos;
+using System.Threading.Tasks;
 
 namespace EduConnect_API.Services.Interfaces
 {
@@ -11,5 +12,9 @@ namespace EduConnect_API.Services.Interfaces
         Task<IEnumerable<SolicitudTutoriaDto>> ObtenerSolicitudesTutorias(FiltroSolicitudesDto filtro);
         Task<IEnumerable<EstadoSolicitudDto>> ObtenerEstadosSolicitud();
         Task<int> CrearSolicitudTutoria(SolicitudTutoriaRequestDto solicitud);
+        Task<ComentarioResponseDto> CrearComentario(CrearComentarioDto comentario);
+        Task<IEnumerable<RankingTutorDto>> ObtenerRankingTutores();
+
+        Task<IEnumerable<ComentarioTutorInfoDto>> ObtenerComentariosPorTutor(ComentariosTutorRequestDto request);
     }
 }

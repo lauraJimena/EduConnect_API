@@ -121,11 +121,11 @@ namespace EduConnect_API.Repositories
                         Carrera = reader.GetString(reader.GetOrdinal("Carrera")),
                         IdSemestre = reader.GetByte(reader.GetOrdinal("Semestre")),
                         Rol = reader.GetString(reader.GetOrdinal("Rol")),
-                        Estado = reader.GetString(reader.GetOrdinal("Estado")), 
-                        IdRol= reader.GetByte(reader.GetOrdinal("IdRol")),
+                        Estado = reader.GetString(reader.GetOrdinal("Estado")),
+                        IdRol = reader.GetByte(reader.GetOrdinal("IdRol")),
                         IdEstado = reader.GetByte(reader.GetOrdinal("IdEstado")),
-                        IdTipoIdent= reader.GetByte(reader.GetOrdinal("IdTipoIdent")), 
-                        IdCarrera= reader.GetInt16(reader.GetOrdinal("IdCarrera"))
+                        IdTipoIdent = reader.GetByte(reader.GetOrdinal("IdTipoIdent")),
+                        IdCarrera = reader.GetInt16(reader.GetOrdinal("IdCarrera"))
 
 
                     });
@@ -313,5 +313,231 @@ WHERE id_usu = @id_usu";
                 throw new Exception("Error al cambiar el estado del usuario: " + ex.Message);
             }
         }
+
+        public async Task<IEnumerable<MateriasDto>> ObtenerTodasMaterias()
+        {
+            const string sql = @"
+SELECT 
+    m.id_materia AS IdMateria,
+    m.cod_materia AS CodMateria,
+    m.nom_materia AS NomMateria,
+    m.num_creditos AS NumCreditos,
+    m.descrip_materia AS DescripMateria,
+    m.id_estado AS IdEstado,
+    e.nom_estado AS Estado,
+    m.id_semestre AS IdSemestre,
+    s.num_semestre AS Semestre,
+    m.id_carrera AS IdCarrera,
+    c.nom_carrera AS Carrera
+FROM [EduConnect].[dbo].[materia] m
+INNER JOIN [EduConnect].[dbo].[estado] e ON m.id_estado = e.id_estado
+INNER JOIN [EduConnect].[dbo].[semestre] s ON m.id_semestre = s.id_semestre
+INNER JOIN [EduConnect].[dbo].[carrera] c ON m.id_carrera = c.id_carrera
+ORDER BY m.nom_materia ASC";
+
+            var lista = new List<MateriasDto>();
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var dto = new MateriasDto
+                {
+                    IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria")),
+                    CodMateria = reader.GetString(reader.GetOrdinal("CodMateria")),
+                    NomMateria = reader.GetString(reader.GetOrdinal("NomMateria")),
+                    NumCreditos = reader.GetInt32(reader.GetOrdinal("NumCreditos")),
+                    DescripMateria = reader.GetString(reader.GetOrdinal("DescripMateria")),
+                    IdEstado = Convert.ToInt32(reader["IdEstado"]),
+                    Estado = reader.GetString(reader.GetOrdinal("Estado")),
+                    IdSemestre = reader.GetInt32(reader.GetOrdinal("IdSemestre")),
+                    // CORREGIDO: Convertir num_semestre a string de forma segura
+                    Semestre = Convert.ToString(reader["Semestre"]),
+                    IdCarrera = reader.GetInt32(reader.GetOrdinal("IdCarrera")),
+                    Carrera = reader.GetString(reader.GetOrdinal("Carrera"))
+                };
+                lista.Add(dto);
+            }
+
+            return lista;
+        }
+
+        // Obtener materia por ID - CORREGIDO: Conversión segura
+        public async Task<MateriasDto> ObtenerMateriaPorId(int idMateria)
+        {
+            const string sql = @"
+SELECT 
+    m.id_materia AS IdMateria,
+    m.cod_materia AS CodMateria,
+    m.nom_materia AS NomMateria,
+    m.num_creditos AS NumCreditos,
+    m.descrip_materia AS DescripMateria,
+    m.id_estado AS IdEstado,
+    e.nom_estado AS Estado,
+    m.id_semestre AS IdSemestre,
+    s.num_semestre AS Semestre,
+    m.id_carrera AS IdCarrera,
+    c.nom_carrera AS Carrera
+FROM [EduConnect].[dbo].[materia] m
+INNER JOIN [EduConnect].[dbo].[estado] e ON m.id_estado = e.id_estado
+INNER JOIN [EduConnect].[dbo].[semestre] s ON m.id_semestre = s.id_semestre
+INNER JOIN [EduConnect].[dbo].[carrera] c ON m.id_carrera = c.id_carrera
+WHERE m.id_materia = @IdMateria";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@IdMateria", idMateria);
+
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new MateriasDto
+                {
+                    IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria")),
+                    CodMateria = reader.GetString(reader.GetOrdinal("CodMateria")),
+                    NomMateria = reader.GetString(reader.GetOrdinal("NomMateria")),
+                    NumCreditos = reader.GetInt32(reader.GetOrdinal("NumCreditos")),
+                    DescripMateria = reader.GetString(reader.GetOrdinal("DescripMateria")),
+                    IdEstado = Convert.ToInt32(reader["IdEstado"]),
+                    Estado = reader.GetString(reader.GetOrdinal("Estado")),
+                    IdSemestre = reader.GetInt32(reader.GetOrdinal("IdSemestre")),
+                    
+                    Semestre = Convert.ToString(reader["Semestre"]),
+                    IdCarrera = reader.GetInt32(reader.GetOrdinal("IdCarrera")),
+                    Carrera = reader.GetString(reader.GetOrdinal("Carrera"))
+                };
+            }
+
+            throw new Exception("Materia no encontrada");
+        }
+
+
+        public async Task<int> CrearMateria(CrearMateriaDto materia)
+        {
+            const string sql = @"
+INSERT INTO [EduConnect].[dbo].[materia] 
+    (cod_materia, nom_materia, num_creditos, descrip_materia, id_estado, id_semestre, id_carrera)
+VALUES 
+    (@cod_materia, @nom_materia, @num_creditos, @descrip_materia, 1, @id_semestre, @id_carrera)";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+
+            // QUITAMOS el parámetro @id_materia
+            command.Parameters.AddWithValue("@cod_materia", materia.CodMateria);
+            command.Parameters.AddWithValue("@nom_materia", materia.NomMateria);
+            command.Parameters.AddWithValue("@num_creditos", materia.NumCreditos);
+            command.Parameters.AddWithValue("@descrip_materia", materia.DescripMateria);
+            command.Parameters.AddWithValue("@id_semestre", materia.IdSemestre);
+            command.Parameters.AddWithValue("@id_carrera", materia.IdCarrera);
+
+            return await command.ExecuteNonQueryAsync();
+        }
+
+        
+        public async Task<bool> ExisteMateria(int idMateria)
+        {
+            const string sql = "SELECT COUNT(1) FROM [EduConnect].[dbo].[materia] WHERE id_materia = @id_materia";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@id_materia", idMateria);
+
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0; // CORREGIDO: Conversión segura
+        }
+
+        public async Task<bool> ExisteCodigoMateria(string codMateria, int? idMateriaExcluir = null)
+        {
+            var sql = "SELECT COUNT(1) FROM [EduConnect].[dbo].[materia] WHERE cod_materia = @cod_materia";
+
+            if (idMateriaExcluir.HasValue)
+            {
+                sql += " AND id_materia != @id_materia";
+            }
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@cod_materia", codMateria);
+
+            if (idMateriaExcluir.HasValue)
+            {
+                command.Parameters.AddWithValue("@id_materia", idMateriaExcluir.Value);
+            }
+
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0; // CORREGIDO: Conversión segura
+        }
+
+        public async Task<bool> ExisteCarrera(int idCarrera)
+        {
+            const string sql = "SELECT COUNT(1) FROM [EduConnect].[dbo].[carrera] WHERE id_carrera = @id_carrera";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@id_carrera", idCarrera);
+
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0; // CORREGIDO: Conversión segura
+        }
+
+        public async Task<bool> ExisteSemestre(int idSemestre)
+        {
+            const string sql = "SELECT COUNT(1) FROM [EduConnect].[dbo].[semestre] WHERE id_semestre = @id_semestre";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@id_semestre", idSemestre);
+
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0; // CORREGIDO: Conversión segura
+        }
+        // Actualizar materia
+        public async Task<int> ActualizarMateria(ActualizarMateriaDto materia)
+        {
+            const string sql = @"
+UPDATE [EduConnect].[dbo].[materia]
+SET cod_materia = @cod_materia,
+    nom_materia = @nom_materia,
+    num_creditos = @num_creditos,
+    descrip_materia = @descrip_materia,
+    id_estado = @id_estado,
+    id_semestre = @id_semestre,
+    id_carrera = @id_carrera
+WHERE id_materia = @id_materia";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+
+            command.Parameters.AddWithValue("@id_materia", materia.IdMateria);
+            command.Parameters.AddWithValue("@cod_materia", materia.CodMateria);
+            command.Parameters.AddWithValue("@nom_materia", materia.NomMateria);
+            command.Parameters.AddWithValue("@num_creditos", materia.NumCreditos);
+            command.Parameters.AddWithValue("@descrip_materia", materia.DescripMateria);
+            command.Parameters.AddWithValue("@id_estado", materia.IdEstado);
+            command.Parameters.AddWithValue("@id_semestre", materia.IdSemestre);
+            command.Parameters.AddWithValue("@id_carrera", materia.IdCarrera);
+
+            return await command.ExecuteNonQueryAsync();
+        }
+
+        // Cambiar estado de materia (activar/inactivar)
+        public async Task<int> CambiarEstadoMateria(int idMateria, int idEstado)
+        {
+            const string sql = @"
+UPDATE [EduConnect].[dbo].[materia]
+SET id_estado = @id_estado
+WHERE id_materia = @id_materia";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@id_materia", idMateria);
+            command.Parameters.AddWithValue("@id_estado", idEstado);
+
+            return await command.ExecuteNonQueryAsync();
+        }
+
     }
 }

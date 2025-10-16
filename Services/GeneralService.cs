@@ -20,7 +20,7 @@ namespace EduConnect_API.Services
         }
         public async Task RegistrarUsuario(CrearUsuarioDto usuario)
         {
-            //Validaciones básicas obligatorias
+            // Validaciones básicas obligatorias
             if (string.IsNullOrWhiteSpace(usuario.Nombre))
                 throw new Exception("El nombre del usuario es obligatorio.");
 
@@ -33,19 +33,19 @@ namespace EduConnect_API.Services
             if (string.IsNullOrWhiteSpace(usuario.NumIdent))
                 throw new Exception("El número de identificación es obligatorio.");
 
-
-            //Validación de correo
+            // Validación de correo
             if (string.IsNullOrWhiteSpace(usuario.Correo))
                 throw new Exception("El correo es obligatorio.");
             else if (!Regex.IsMatch(usuario.Correo, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
                 throw new Exception("El formato del correo no es válido.");
+
             // Validación de número de identificación
             if (string.IsNullOrWhiteSpace(usuario.NumIdent))
                 throw new Exception("El número de identificación es obligatorio.");
             else if (!Regex.IsMatch(usuario.NumIdent, @"^\d{7,10}$"))
                 throw new Exception("El número de identificación que ingresaste no es válido.");
 
-            //Validación de teléfono (10 dígitos numéricos)
+            // Validación de teléfono (10 dígitos numéricos)
             if (string.IsNullOrWhiteSpace(usuario.TelUsu))
                 throw new Exception("El teléfono es obligatorio.");
             else if (!Regex.IsMatch(usuario.TelUsu, @"^[0-9]{10}$"))
@@ -57,7 +57,7 @@ namespace EduConnect_API.Services
             else if (!Regex.IsMatch(usuario.ContrasUsu, @"^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{7,}$"))
                 throw new Exception("La contraseña debe tener al menos 7 caracteres, incluir una mayúscula, un número y un carácter especial.");
 
-            //Validaciones de llaves foráneas
+            // Validaciones de llaves foráneas
             if (usuario.IdCarrera <= 0)
                 throw new Exception("Debe seleccionar una carrera válida.");
 
@@ -66,6 +66,14 @@ namespace EduConnect_API.Services
 
             if (usuario.IdRol <= 0)
                 throw new Exception("Debe asignar un rol válido.");
+
+          
+            if (await _generalRepository.ExisteNumeroIdentificacion(usuario.NumIdent))
+                throw new Exception("Ya existe un usuario registrado con este número de identificación.");
+
+          
+            if (await _generalRepository.ExisteCorreo(usuario.Correo))
+                throw new Exception("Ya existe un usuario registrado con este correo electrónico.");
 
             var result = await _generalRepository.RegistrarUsuario(usuario);
 

@@ -27,6 +27,8 @@ namespace EduConnect_API.Repositories.Interfaces
         Task<bool> ExisteAsignacion(int idUsuario, int idMateria);
         Task<int?> ObtenerCarreraDeUsuario(int idUsuario);
 
+        Task<IEnumerable<ComentarioTutorDto>> ObtenerComentariosTutor(FiltroComentariosTutorDto filtro);
+
 
     }
 }

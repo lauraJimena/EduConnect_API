@@ -195,5 +195,22 @@ namespace EduConnect_API.Controllers
             var resultado = await _tutorService.SeleccionarYGuardarAsync(dto);
             return Ok(resultado);
         }
+        [HttpPost("Comentarios")]
+        public async Task<ActionResult<IEnumerable<ComentarioTutorDto>>> ObtenerComentariosTutor([FromBody] FiltroComentariosTutorDto filtro)
+        {
+            try
+            {
+                var comentarios = await _tutorService.ObtenerComentariosTutor(filtro);
+                return Ok(comentarios);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
     }
 }

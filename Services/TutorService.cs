@@ -207,6 +207,25 @@ namespace EduConnect_API.Services
             };
         }
 
+        public async Task<IEnumerable<ComentarioTutorDto>> ObtenerComentariosTutor(FiltroComentariosTutorDto filtro)
+        {
+            // Validaciones
+            if (filtro.IdTutor <= 0)
+                throw new ArgumentException("El ID del tutor es obligatorio.");
+
+            if (!await _tutorRepository.ExisteUsuario(filtro.IdTutor))
+                throw new ArgumentException("El tutor no existe.");
+
+            int rolUsuario = await _tutorRepository.ObtenerRolUsuario(filtro.IdTutor);
+            if (rolUsuario != 2)
+                throw new ArgumentException("El usuario no tiene permisos de tutor.");
+
+            // Validar calificación si se proporciona
+            if (filtro.Calificacion.HasValue && (filtro.Calificacion < 1 || filtro.Calificacion > 5))
+                throw new ArgumentException("La calificación debe estar entre 1 y 5.");
+
+            return await _tutorRepository.ObtenerComentariosTutor(filtro);
+        }
 
 
 

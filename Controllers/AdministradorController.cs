@@ -1,6 +1,8 @@
 using EduConnect_API.Dtos;
+using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Services;
 using EduConnect_API.Services.Interfaces;
+using EduConnect_API.Utilities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +21,7 @@ namespace EduConnect_API.Controllers
             _logger = logger;
             _administradorService = administradorService;
         }
-         /// <summary>
+        /// <summary>
         /// Registra usarios 
         /// </summary>
         [HttpPost("RegistrarUsuario")]
@@ -134,8 +136,131 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-       
+        [HttpGet("ConsultarMaterias")]
+        public async Task<ActionResult<IEnumerable<MateriaDto>>> ObtenerTodasMaterias()
+        {
+            try
+            {
+                var materias = await _administradorService.ObtenerTodasMaterias();
+                return Ok(materias);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
 
+        // CONSULTAR: Obtener materia por ID - CORREGIDO
+        [HttpGet("ObtenerMateriaPorId/{id}")]
+        public async Task<ActionResult<MateriaDto>> ObtenerMateriaPorId(int id)
+        {
+            try
+            {
+                var materia = await _administradorService.ObtenerMateriaPorId(id);
+                return Ok(materia);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
 
+        // CREAR: Crear nueva materia
+        [HttpPost("CrearMateria")]
+        public async Task<ActionResult> CrearMateria([FromBody] CrearMateriaDto materia)
+        {
+            try
+            {
+                var result = await _administradorService.CrearMateria(materia);
+
+                if (result > 0)
+                    return Ok("Materia creada con éxito");
+                else
+                    return BadRequest("No se pudo crear la materia");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
+
+        // ACTUALIZAR: Actualizar materia existente
+        [HttpPut("ActualizarMateria")]
+        public async Task<ActionResult> ActualizarMateria([FromBody] ActualizarMateriaDto materia)
+        {
+            try
+            {
+                var result = await _administradorService.ActualizarMateria(materia);
+
+                if (result > 0)
+                    return Ok("Materia actualizada con éxito");
+                else
+                    return BadRequest("No se pudo actualizar la materia");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
+
+        // ELIMINAR: Inactivar materia - CORREGIDO
+        [HttpPut("Materia/{id}/Inactivar")]
+        public async Task<ActionResult> InactivarMateria(int id)
+        {
+            try
+            {
+                var result = await _administradorService.InactivarMateria(id);
+
+                if (result > 0)
+                    return Ok("Materia inactivada con éxito");
+                else
+                    return BadRequest("No se pudo inactivar la materia");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
+
+        // ACTIVAR: Activar materia - CORREGIDO
+        [HttpPut("Materia/{id}/Activar")]
+        public async Task<ActionResult> ActivarMateria(int id)
+        {
+            try
+            {
+                var result = await _administradorService.ActivarMateria(id);
+
+                if (result > 0)
+                    return Ok("Materia activada con éxito");
+                else
+                    return BadRequest("No se pudo activar la materia");
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
     }
 }
+
+

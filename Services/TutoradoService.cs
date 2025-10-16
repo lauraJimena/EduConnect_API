@@ -176,5 +176,61 @@ namespace EduConnect_API.Services
 
             return await _tutoradoRepository.CrearSolicitudTutoria(solicitud);
         }
+        public async Task<ComentarioResponseDto> CrearComentario(CrearComentarioDto comentario)
+        {
+            // Validaciones básicas
+            if (comentario.IdTutorado <= 0)
+                throw new ArgumentException("El ID del tutorado es obligatorio.");
+
+            if (comentario.IdTutor <= 0)
+                throw new ArgumentException("El ID del tutor es obligatorio.");
+
+            // Validar que el tutorado existe y es tutorado
+            if (!await _tutoradoRepository.ExisteUsuario(comentario.IdTutorado))
+                throw new ArgumentException("El tutorado no existe.");
+
+            int rolTutorado = await _tutoradoRepository.ObtenerRolUsuario(comentario.IdTutorado);
+            if (rolTutorado != 1)
+                throw new ArgumentException("El usuario no tiene permisos de tutorado.");
+
+            // Validar que el tutor existe y es tutor
+            if (!await _tutoradoRepository.ExisteTutor(comentario.IdTutor))
+                throw new ArgumentException("El tutor no existe o no tiene permisos de tutor.");
+
+            // Validar calificación (1-5)
+            if (comentario.Calificacion < 1 || comentario.Calificacion > 5)
+                throw new ArgumentException("La calificación debe estar entre 1 y 5 estrellas.");
+
+            // Validar texto del comentario
+            if (string.IsNullOrWhiteSpace(comentario.Texto))
+                throw new ArgumentException("El comentario es obligatorio.");
+
+            if (comentario.Texto.Length < 10)
+                throw new ArgumentException("El comentario debe tener al menos 10 caracteres.");
+
+            if (comentario.Texto.Length > 500)
+                throw new ArgumentException("El comentario no puede exceder los 500 caracteres.");
+
+
+            return await _tutoradoRepository.CrearComentario(comentario);
+        }
+
+        public async Task<IEnumerable<RankingTutorDto>> ObtenerRankingTutores()
+        {
+            return await _tutoradoRepository.ObtenerRankingTutores();
+        }
+
+        public async Task<IEnumerable<ComentarioTutorInfoDto>> ObtenerComentariosPorTutor(ComentariosTutorRequestDto request)
+        {
+            // Validaciones
+            if (request.IdTutor <= 0)
+                throw new ArgumentException("El ID del tutor es obligatorio.");
+
+            // Validar que el tutor existe
+            if (!await _tutoradoRepository.ExisteTutor(request.IdTutor))
+                throw new ArgumentException("El tutor no existe.");
+
+            return await _tutoradoRepository.ObtenerComentariosPorTutor(request.IdTutor);
+        }
     }
 }

@@ -9,5 +9,8 @@ namespace EduConnect_API.Repositories.Interfaces
         Task<List<CarreraDto>> ObtenerCarrerasAsync();
         Task<List<TipoIdentidadDto>> ObtenerTiposIdentidadAsync();
 
+        Task<bool> ExisteNumeroIdentificacion(string numIdent);
+        Task<bool> ExisteCorreo(string correo);
+
     }
 }

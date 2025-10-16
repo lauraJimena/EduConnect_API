@@ -15,5 +15,9 @@ namespace EduConnect_API.Repositories.Interfaces
         Task<bool> ExisteTutor(int idTutor);
         Task<bool> ExisteMateria(int idMateria);
         Task<bool> ExisteModalidad(int idModalidad);
+        Task<ComentarioResponseDto> CrearComentario(CrearComentarioDto comentario);
+
+        Task<IEnumerable<ComentarioTutorInfoDto>> ObtenerComentariosPorTutor(int idTutor);
+        Task<IEnumerable<RankingTutorDto>> ObtenerRankingTutores();
     }
 }
