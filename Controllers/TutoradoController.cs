@@ -162,7 +162,53 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-
+        [HttpPost("CrearComentario")]
+        public async Task<ActionResult<ComentarioResponseDto>> CrearComentario([FromBody] CrearComentarioDto comentario)
+        {
+            try
+            {
+                var result = await _tutoradoService.CrearComentario(comentario);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
+        [HttpGet("RankingTutores")]
+        public async Task<ActionResult<IEnumerable<RankingTutorDto>>> ObtenerRankingTutores()
+        {
+            try
+            {
+                var ranking = await _tutoradoService.ObtenerRankingTutores();
+                return Ok(ranking);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
+        [HttpPost("ComentariosTutor")]
+        public async Task<ActionResult<IEnumerable<ComentarioTutorInfoDto>>> ObtenerComentariosPorTutor([FromBody] ComentariosTutorRequestDto request)
+        {
+            try
+            {
+                var comentarios = await _tutoradoService.ObtenerComentariosPorTutor(request);
+                return Ok(comentarios);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
     }
 
 

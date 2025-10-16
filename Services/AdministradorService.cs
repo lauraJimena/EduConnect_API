@@ -158,7 +158,133 @@ namespace EduConnect_API.Services
 
             return filasAfectadas;
         }
+        public async Task<IEnumerable<MateriasDto>> ObtenerTodasMaterias()
+        {
+            return await _administradorRepository.ObtenerTodasMaterias();
+        }
 
+        // CONSULTAR: Obtener materia por ID
+        public async Task<MateriasDto> ObtenerMateriaPorId(int idMateria)
+        {
+            if (idMateria <= 0)
+                throw new ArgumentException("El ID de la materia es obligatorio.");
+
+            if (!await _administradorRepository.ExisteMateria(idMateria))
+                throw new ArgumentException("La materia no existe.");
+
+            return await _administradorRepository.ObtenerMateriaPorId(idMateria);
+        }
+
+        // CREAR: Crear nueva materia
+        public async Task<int> CrearMateria(CrearMateriaDto materia)
+        {
+            // Validaciones
+            if (string.IsNullOrWhiteSpace(materia.CodMateria))
+                throw new ArgumentException("El código de la materia es obligatorio.");
+
+            if (string.IsNullOrWhiteSpace(materia.NomMateria))
+                throw new ArgumentException("El nombre de la materia es obligatorio.");
+
+            if (materia.NumCreditos <= 0)
+                throw new ArgumentException("El número de créditos debe ser mayor a 0.");
+
+            if (materia.IdSemestre <= 0)
+                throw new ArgumentException("El semestre es obligatorio.");
+
+            if (materia.IdCarrera <= 0)
+                throw new ArgumentException("La carrera es obligatoria.");
+
+            // Validar formato del código (ej: MAT101)
+            if (!Regex.IsMatch(materia.CodMateria, @"^[A-Z]{3}\d{3}$"))
+                throw new ArgumentException("El código de materia debe tener 3 letras seguidas de 3 números (ej: MAT101).");
+
+            // Validar que no exista otro código igual
+            if (await _administradorRepository.ExisteCodigoMateria(materia.CodMateria))
+                throw new ArgumentException("Ya existe una materia con este código.");
+
+            // Validar que exista la carrera
+            if (!await _administradorRepository.ExisteCarrera(materia.IdCarrera))
+                throw new ArgumentException("La carrera especificada no existe.");
+
+            // Validar que exista el semestre
+            if (!await _administradorRepository.ExisteSemestre(materia.IdSemestre))
+                throw new ArgumentException("El semestre especificado no existe.");
+
+            return await _administradorRepository.CrearMateria(materia);
+        }
+
+        // ACTUALIZAR: Actualizar materia existente
+        public async Task<int> ActualizarMateria(ActualizarMateriaDto materia)
+        {
+            // Validaciones
+            if (materia.IdMateria <= 0)
+                throw new ArgumentException("El ID de la materia es obligatorio.");
+
+            if (!await _administradorRepository.ExisteMateria(materia.IdMateria))
+                throw new ArgumentException("La materia no existe.");
+
+            if (string.IsNullOrWhiteSpace(materia.CodMateria))
+                throw new ArgumentException("El código de la materia es obligatorio.");
+
+            if (string.IsNullOrWhiteSpace(materia.NomMateria))
+                throw new ArgumentException("El nombre de la materia es obligatorio.");
+
+            if (materia.NumCreditos <= 0)
+                throw new ArgumentException("El número de créditos debe ser mayor a 0.");
+
+            if (materia.IdEstado <= 0)
+                throw new ArgumentException("El estado es obligatorio.");
+
+            if (materia.IdSemestre <= 0)
+                throw new ArgumentException("El semestre es obligatorio.");
+
+            if (materia.IdCarrera <= 0)
+                throw new ArgumentException("La carrera es obligatoria.");
+
+            // Validar formato del código
+            if (!Regex.IsMatch(materia.CodMateria, @"^[A-Z]{3}\d{3}$"))
+                throw new ArgumentException("El código de materia debe tener 3 letras seguidas de 3 números (ej: MAT101).");
+
+            // Validar que no exista otro código igual (excluyendo la materia actual)
+            if (await _administradorRepository.ExisteCodigoMateria(materia.CodMateria, materia.IdMateria))
+                throw new ArgumentException("Ya existe otra materia con este código.");
+
+            // Validar que exista la carrera
+            if (!await _administradorRepository.ExisteCarrera(materia.IdCarrera))
+                throw new ArgumentException("La carrera especificada no existe.");
+
+            // Validar que exista el semestre
+            if (!await _administradorRepository.ExisteSemestre(materia.IdSemestre))
+                throw new ArgumentException("El semestre especificado no existe.");
+
+            return await _administradorRepository.ActualizarMateria(materia);
+        }
+
+        // ELIMINAR: Inactivar materia
+        public async Task<int> InactivarMateria(int idMateria)
+        {
+            if (idMateria <= 0)
+                throw new ArgumentException("El ID de la materia es obligatorio.");
+
+            if (!await _administradorRepository.ExisteMateria(idMateria))
+                throw new ArgumentException("La materia no existe.");
+
+            return await _administradorRepository.CambiarEstadoMateria(idMateria, 2); // Estado 2 = Inactivo
+        }
+
+        // ACTIVAR: Activar materia
+        public async Task<int> ActivarMateria(int idMateria)
+        {
+            if (idMateria <= 0)
+                throw new ArgumentException("El ID de la materia es obligatorio.");
+
+            if (!await _administradorRepository.ExisteMateria(idMateria))
+                throw new ArgumentException("La materia no existe.");
+
+            return await _administradorRepository.CambiarEstadoMateria(idMateria, 1); // Estado 1 = Activo
+        }
+
+        
 
 
     }

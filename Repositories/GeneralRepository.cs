@@ -169,7 +169,29 @@ namespace EduConnect_API.Repositories
                 throw new Exception("Error al consultar los tipos de identidad: " + ex.Message);
             }
         }
+        public async Task<bool> ExisteNumeroIdentificacion(string numIdent)
+        {
+            const string sql = "SELECT COUNT(1) FROM [EduConnect].[dbo].[usuario] WHERE num_ident = @numIdent";
 
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@numIdent", numIdent);
+
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0;
+        }
+
+        public async Task<bool> ExisteCorreo(string correo)
+        {
+            const string sql = "SELECT COUNT(1) FROM [EduConnect].[dbo].[usuario] WHERE correo_usu = @correo";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@correo", correo);
+
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0;
+        }
 
     }
 }

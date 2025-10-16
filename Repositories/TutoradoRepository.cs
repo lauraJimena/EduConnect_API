@@ -384,6 +384,159 @@ VALUES
             var result = await command.ExecuteScalarAsync();
             return Convert.ToInt32(result) > 0;
         }
+        public async Task<ComentarioResponseDto> CrearComentario(CrearComentarioDto comentario)
+        {
+            const string sql = @"
+INSERT INTO [EduConnect].[dbo].[comentario] 
+    (texto, calificacion, fecha, id_tutor, id_tutorado, id_estado)
+OUTPUT INSERTED.id_comentario, INSERTED.texto, INSERTED.calificacion, INSERTED.fecha, 
+       INSERTED.id_tutor, INSERTED.id_tutorado, INSERTED.id_estado
+VALUES 
+    (@texto, @calificacion, GETDATE(), @id_tutor, @id_tutorado, 1)"; // id_estado = 1 (Activo)
+
+            const string sqlDatos = @"
+SELECT 
+    c.id_comentario,
+    c.texto,
+    c.calificacion,
+    c.fecha,
+    c.id_tutor,
+    c.id_tutorado,
+    c.id_estado,
+    CONCAT(tutor.nom_usu, ' ', tutor.apel_usu) AS NombreTutor,
+    CONCAT(tutorado.nom_usu, ' ', tutorado.apel_usu) AS NombreTutorado
+FROM [EduConnect].[dbo].[comentario] c
+INNER JOIN [EduConnect].[dbo].[usuario] tutor ON c.id_tutor = tutor.id_usu
+INNER JOIN [EduConnect].[dbo].[usuario] tutorado ON c.id_tutorado = tutorado.id_usu
+WHERE c.id_comentario = @id_comentario";
+
+            try
+            {
+                using var connection = _dbContextUtility.GetOpenConnection();
+
+                // Insertar el comentario
+                int idComentario;
+                using (var command = new SqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@texto", comentario.Texto);
+                    command.Parameters.AddWithValue("@calificacion", comentario.Calificacion);
+                    command.Parameters.AddWithValue("@id_tutor", comentario.IdTutor);
+                    command.Parameters.AddWithValue("@id_tutorado", comentario.IdTutorado);
+
+                    idComentario = Convert.ToInt32(await command.ExecuteScalarAsync());
+                }
+
+                // Obtener los datos completos del comentario creado
+                using var commandDatos = new SqlCommand(sqlDatos, connection);
+                commandDatos.Parameters.AddWithValue("@id_comentario", idComentario);
+
+                using var reader = await commandDatos.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    return new ComentarioResponseDto
+                    {
+                        IdComentario = reader.GetInt32(reader.GetOrdinal("id_comentario")),
+                        Texto = reader.GetString(reader.GetOrdinal("texto")),
+                        Calificacion = Convert.ToInt32(reader["calificacion"]),
+                        Fecha = reader.GetDateTime(reader.GetOrdinal("fecha")),
+                        IdTutor = reader.GetInt32(reader.GetOrdinal("id_tutor")),
+                        IdTutorado = reader.GetInt32(reader.GetOrdinal("id_tutorado")),
+                        IdEstado = Convert.ToInt32(reader["id_estado"]),
+                        NombreTutor = reader.GetString(reader.GetOrdinal("NombreTutor")),
+                        NombreTutorado = reader.GetString(reader.GetOrdinal("NombreTutorado"))
+                    };
+                }
+
+                throw new Exception("Error al recuperar el comentario creado");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al crear el comentario: " + ex.Message);
+            }
+        }
+
+        public async Task<IEnumerable<RankingTutorDto>> ObtenerRankingTutores()
+        {
+            // Consulta CORREGIDA usando id_usu en tutor_materia
+            const string sql = @"
+SELECT 
+    CONCAT(u.nom_usu, ' ', u.apel_usu) AS NombreTutor,
+    c.nom_carrera AS Carrera,
+    s.num_semestre AS Semestre,
+    ISNULL((
+        SELECT STRING_AGG(m.nom_materia, ', ') 
+        FROM [EduConnect].[dbo].[tutor_materia] tm
+        INNER JOIN [EduConnect].[dbo].[materia] m ON tm.id_materia = m.id_materia
+        WHERE tm.id_usu = u.id_usu  -- CORREGIDO: usar id_usu en lugar de id_tutor
+    ), 'Sin materias registradas') AS Materias,
+    ISNULL((
+        SELECT AVG(CAST(calificacion AS FLOAT))
+        FROM [EduConnect].[dbo].[comentario] 
+        WHERE id_tutor = u.id_usu AND id_estado = 1  -- id_tutor se refiere al id_usu del tutor
+    ), 0) AS PromedioCalificacion
+FROM [EduConnect].[dbo].[usuario] u
+INNER JOIN [EduConnect].[dbo].[carrera] c ON u.id_carrera = c.id_carrera
+INNER JOIN [EduConnect].[dbo].[semestre] s ON u.id_semestre = s.id_semestre
+WHERE u.id_rol = 2 -- Solo tutores
+    AND u.id_estado = 1 -- Solo usuarios activos
+ORDER BY PromedioCalificacion DESC";
+
+            var lista = new List<RankingTutorDto>();
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var dto = new RankingTutorDto
+                {
+                    NombreTutor = reader.GetString(reader.GetOrdinal("NombreTutor")),
+                    Carrera = reader.GetString(reader.GetOrdinal("Carrera")),
+                    Semestre = Convert.ToString(reader["Semestre"]),
+                    Materias = reader.GetString(reader.GetOrdinal("Materias")),
+                    PromedioCalificacion = Convert.ToDouble(reader["PromedioCalificacion"])
+                };
+                lista.Add(dto);
+            }
+
+            return lista;
+        }
+        public async Task<IEnumerable<ComentarioTutorInfoDto>> ObtenerComentariosPorTutor(int idTutor)
+        {
+            const string sql = @"
+SELECT 
+    CONCAT(u.nom_usu, ' ', u.apel_usu) AS Usuario,
+    c.texto AS Comentario,
+    c.calificacion AS Calificacion,
+    c.fecha AS Fecha
+FROM [EduConnect].[dbo].[comentario] c
+INNER JOIN [EduConnect].[dbo].[usuario] u ON c.id_tutorado = u.id_usu
+WHERE c.id_tutor = @idTutor
+    AND c.id_estado = 1 -- Solo comentarios activos
+ORDER BY c.fecha DESC";
+
+            var lista = new List<ComentarioTutorInfoDto>();
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@idTutor", idTutor);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var dto = new ComentarioTutorInfoDto
+                {
+                    Usuario = reader.GetString(reader.GetOrdinal("Usuario")),
+                    Comentario = reader.GetString(reader.GetOrdinal("Comentario")),
+                    Calificacion = Convert.ToInt32(reader["Calificacion"]),
+                    Fecha = reader.GetDateTime(reader.GetOrdinal("Fecha"))
+                };
+                lista.Add(dto);
+            }
+
+            return lista;
+        }
     }
     }
 

@@ -559,5 +559,70 @@ WHERE id_tutoria = @id_tutoria AND id_estado = 4"; // Solo actualiza si está pe
 
             return lista;
         }
+        public async Task<IEnumerable<ComentarioTutorDto>> ObtenerComentariosTutor(FiltroComentariosTutorDto filtro)
+        {
+            var sql = @"
+SELECT 
+    c.id_comentario AS IdComentario,
+    CONCAT(u.nom_usu, ' ', u.apel_usu) AS Usuario,
+    c.texto AS Descripcion,
+    c.fecha AS Fecha,
+    c.calificacion AS Calificacion
+FROM [EduConnect].[dbo].[comentario] c
+INNER JOIN [EduConnect].[dbo].[usuario] u ON c.id_tutorado = u.id_usu
+WHERE c.id_tutor = @IdTutor";
+
+            // Aplicar filtros si existen
+            if (filtro.Fecha.HasValue)
+            {
+                sql += " AND CAST(c.fecha AS DATE) = @Fecha";
+            }
+
+            if (filtro.Calificacion.HasValue)
+            {
+                sql += " AND c.calificacion = @Calificacion";
+            }
+
+            sql += " ORDER BY c.fecha DESC";
+
+            var lista = new List<ComentarioTutorDto>();
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+
+            command.Parameters.AddWithValue("@IdTutor", filtro.IdTutor);
+
+            if (filtro.Fecha.HasValue)
+            {
+                command.Parameters.AddWithValue("@Fecha", filtro.Fecha.Value.Date);
+            }
+
+            if (filtro.Calificacion.HasValue)
+            {
+                command.Parameters.AddWithValue("@Calificacion", filtro.Calificacion.Value);
+            }
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var calificacion = Convert.ToInt32(reader["Calificacion"]);
+                var fecha = reader.GetDateTime(reader.GetOrdinal("Fecha"));
+
+                var dto = new ComentarioTutorDto
+                {
+                    IdComentario = reader.GetInt32(reader.GetOrdinal("IdComentario")),
+                    Usuario = reader.GetString(reader.GetOrdinal("Usuario")),
+                    Descripcion = reader.GetString(reader.GetOrdinal("Descripcion")),
+                    Fecha = fecha,
+                    FechaFormateada = fecha.ToString("dd/MM/yyyy HH:mm"),
+                    Calificacion = calificacion,
+         
+                };
+                lista.Add(dto);
+            }
+
+            return lista;
+        }
+
     }
 }
