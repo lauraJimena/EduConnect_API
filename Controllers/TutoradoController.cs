@@ -163,23 +163,26 @@ namespace EduConnect_API.Controllers
             }
         }
         [HttpPost("CrearComentario")]
-        public async Task<ActionResult<ComentarioResponseDto>> CrearComentario([FromBody] CrearComentarioDto comentario)
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> CrearComentario([FromBody] CrearComentarioDto dto)
         {
             try
             {
-                var result = await _tutoradoService.CrearComentario(comentario);
-                return Ok(result);
+                var mensaje = await _tutoradoService.CrearComentarioAsync(dto);
+                return Ok(new { mensaje });
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new { error = ex.Message });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "Error interno: " + ex.Message);
+                return StatusCode(500, new { error = "Error interno: " + ex.Message });
             }
         }
+
         [HttpGet("RankingTutores")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<IEnumerable<RankingTutorDto>>> ObtenerRankingTutores()
         {
             try
@@ -209,6 +212,48 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        [HttpGet("PerfilTutor/{idTutor}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> ObtenerPerfilTutor(int idTutor)
+        {
+            try
+            {
+                var tutor = await _tutoradoService.ObtenerPerfilTutorAsync(idTutor);
+                if (tutor == null)
+                    return NotFound("No se encontró el tutor especificado.");
+
+                return Ok(tutor);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno del servidor: " + ex.Message);
+            }
+        }
+        [HttpGet("ObtenerTutoradoPorId/{idUsuario}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> ObtenerTutoradoPorId(int idUsuario)
+        {
+            try
+            {
+                // Llama al servicio
+                var usuario = await _tutoradoService.ObtenerTutoradoPorIdAsync(idUsuario);
+
+                // Si no existe
+                if (usuario == null)
+                    return NotFound(new { mensaje = "Tutorado no encontrado." });
+
+                // Retorna los datos correctamente
+                return Ok(usuario);
+            }
+            catch (Exception ex)
+            {
+                // Manejo de errores controlado
+                return StatusCode(500, new { mensaje = "Error interno del servidor: " + ex.Message });
+            }
+        }
+       
+
+
     }
 
 

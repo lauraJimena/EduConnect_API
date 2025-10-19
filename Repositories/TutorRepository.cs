@@ -103,7 +103,7 @@ namespace EduConnect_API.Repositories
             return lista;
         }
 
-        public async Task<int> ActualizarPerfilTutor(EditarPerfilDto tutor)
+        public async Task<int> ActualizarPerfilTutor(EditarPerfilDto perfil)
         {
             const string sql = @"
 UPDATE [EduConnect].[dbo].[usuario]
@@ -112,7 +112,8 @@ SET nom_usu = @nom_usu,
     id_tipo_ident = @id_tipo_ident,
     num_ident = @num_ident,
     correo_usu = @correo_usu,
-    tel_usu = @tel_usu
+    tel_usu = @tel_usu,
+    avatar = @avatar -- ✅ Nuevo campo agregado
 WHERE id_usu = @id_usu";
 
             try
@@ -120,19 +121,20 @@ WHERE id_usu = @id_usu";
                 using var connection = _dbContextUtility.GetOpenConnection();
                 using var command = new SqlCommand(sql, connection);
 
-                command.Parameters.AddWithValue("@id_usu", tutor.IdUsu);
-                command.Parameters.AddWithValue("@nom_usu", tutor.Nombre);
-                command.Parameters.AddWithValue("@apel_usu", tutor.Apellido);
-                command.Parameters.AddWithValue("@id_tipo_ident", tutor.IdTipoIdent);
-                command.Parameters.AddWithValue("@num_ident", tutor.NumIdent);
-                command.Parameters.AddWithValue("@correo_usu", tutor.Correo);
-                command.Parameters.AddWithValue("@tel_usu", tutor.TelUsu);
+                command.Parameters.AddWithValue("@id_usu", perfil.IdUsu);
+                command.Parameters.AddWithValue("@nom_usu", perfil.Nombre);
+                command.Parameters.AddWithValue("@apel_usu", perfil.Apellido);
+                command.Parameters.AddWithValue("@id_tipo_ident", perfil.IdTipoIdent);
+                command.Parameters.AddWithValue("@num_ident", perfil.NumIdent);
+                command.Parameters.AddWithValue("@correo_usu", perfil.Correo);
+                command.Parameters.AddWithValue("@tel_usu", perfil.TelUsu);
+                command.Parameters.AddWithValue("@avatar", perfil.Avatar);
 
                 return await command.ExecuteNonQueryAsync();
             }
             catch (Exception ex)
             {
-                throw new Exception("Error al actualizar el perfil del tutor: " + ex.Message);
+                throw new Exception("Error al actualizar el perfil del tutorado: " + ex.Message);
             }
         }
 
@@ -160,8 +162,8 @@ WHERE id_usu = @id_usu";
         }
         // SOLO solicitudes PENDIENTES (id_estado = 4)
         public async Task<IEnumerable<SolicitudTutorDto>> ObtenerSolicitudesTutor(FiltroSolicitudesTutorDto filtro)
-{
-    var sql = @"
+        {
+            var sql = @"
         SELECT 
             t.id_tutoria AS IdTutoria,
             CONCAT(u.nom_usu, ' ', u.apel_usu) AS NombreTutorado,
@@ -180,60 +182,63 @@ WHERE id_usu = @id_usu";
         INNER JOIN [EduConnect].[dbo].[modalidad] mo ON t.id_modalidad = mo.id_modalidad
         WHERE t.id_tutor = @IdTutor AND t.id_estado = 4"; // SOLO solicitudes pendientes
 
-    // ✅ Aplicar filtros solo si tienen valor real
-    if (filtro.IdMateria.HasValue && filtro.IdMateria.Value > 0)
-    {
-        sql += " AND t.id_materia = @IdMateria";
-    }
+            // ✅ Aplicar filtros solo si tienen valor real
+            if (filtro.IdMateria.HasValue && filtro.IdMateria.Value > 0)
+            {
+                sql += " AND t.id_materia = @IdMateria";
+            }
 
-    if (filtro.IdModalidad.HasValue && filtro.IdModalidad.Value > 0)
-    {
-        sql += " AND t.id_modalidad = @IdModalidad";
-    }
+            if (filtro.IdModalidad.HasValue && filtro.IdModalidad.Value > 0)
+            {
+                sql += " AND t.id_modalidad = @IdModalidad";
+            }
 
-    sql += " ORDER BY t.fecha DESC, t.hora DESC";
+            sql += " ORDER BY t.fecha DESC, t.hora DESC";
 
-    var lista = new List<SolicitudTutorDto>();
+            var lista = new List<SolicitudTutorDto>();
 
-    using var connection = _dbContextUtility.GetOpenConnection();
-    using var command = new SqlCommand(sql, connection);
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
 
-    // Parámetro obligatorio del tutor
-    command.Parameters.AddWithValue("@IdTutor", filtro.IdTutor);
+            // Parámetro obligatorio del tutor
+            command.Parameters.AddWithValue("@IdTutor", filtro.IdTutor);
 
-    // Parámetros opcionales
-    if (filtro.IdMateria.HasValue && filtro.IdMateria.Value > 0)
-    {
-        command.Parameters.AddWithValue("@IdMateria", filtro.IdMateria.Value);
-    }
+            // Parámetros opcionales
+            if (filtro.IdMateria.HasValue && filtro.IdMateria.Value > 0)
+            {
+                command.Parameters.AddWithValue("@IdMateria", filtro.IdMateria.Value);
+            }
 
-    if (filtro.IdModalidad.HasValue && filtro.IdModalidad.Value > 0)
-    {
-        command.Parameters.AddWithValue("@IdModalidad", filtro.IdModalidad.Value);
-    }
+            if (filtro.IdModalidad.HasValue && filtro.IdModalidad.Value > 0)
+            {
+                command.Parameters.AddWithValue("@IdModalidad", filtro.IdModalidad.Value);
+            }
 
-    using var reader = await command.ExecuteReaderAsync();
-    while (await reader.ReadAsync())
-    {
-        var dto = new SolicitudTutorDto
-        {
-            IdTutoria = reader.GetInt32(reader.GetOrdinal("IdTutoria")),
-            NombreTutorado = reader.GetString(reader.GetOrdinal("NombreTutorado")),
-            Materia = reader.GetString(reader.GetOrdinal("Materia")),
-            Fecha = reader.GetDateTime(reader.GetOrdinal("Fecha")),
-            Hora = reader.GetString(reader.GetOrdinal("Hora")),
-            Tema = reader.GetString(reader.GetOrdinal("Tema")),
-            IdEstado = Convert.ToInt32(reader["IdEstado"]),
-            Estado = reader.GetString(reader.GetOrdinal("Estado")),
-            // Si quieres mostrar la modalidad en el front
-            Modalidad = reader.GetString(reader.GetOrdinal("Modalidad")),
-            IdModalidad = reader.GetInt32(reader.GetOrdinal("IdTutoria"))
-        };
-        lista.Add(dto);
-    }
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var dto = new SolicitudTutorDto
+                {
+                    IdTutoria = reader.GetInt32(reader.GetOrdinal("IdTutoria")),
+                    NombreTutorado = reader.GetString(reader.GetOrdinal("NombreTutorado")),
+                    Materia = reader.GetString(reader.GetOrdinal("Materia")),
+                    Fecha = reader.GetDateTime(reader.GetOrdinal("Fecha")),
+                    Hora = reader.GetString(reader.GetOrdinal("Hora")),
+                    Tema = reader.GetString(reader.GetOrdinal("Tema")),
+                    IdEstado = Convert.ToInt32(reader["IdEstado"]),
+                    Estado = reader.GetString(reader.GetOrdinal("Estado")),
+                    // Si quieres mostrar la modalidad en el front
+                    Modalidad = reader.GetString(reader.GetOrdinal("Modalidad")),
+                    IdModalidad = reader.GetByte(reader.GetOrdinal("IdModalidad")),
 
-    return lista;
-}
+                };
+                lista.Add(dto);
+            }
+
+            return lista;
+        }
+
+
 
 
 
@@ -270,7 +275,7 @@ WHERE id_tutoria = @id_tutoria AND id_estado = 4"; // Solo actualiza si está pe
         // DETALLE de solicitud - SOLO con id_tutoria
         public async Task<DetalleSolicitudTutoriaDto> ObtenerDetalleSolicitud(int idTutoria)
         {
-            
+
             using var connection = _dbContextUtility.GetOpenConnection();
             using var command = new SqlCommand("dbo.usp_Tutoria_ObtenerDetalleSolicitud", connection);
             command.CommandType = CommandType.StoredProcedure;
@@ -328,54 +333,101 @@ WHERE id_tutoria = @id_tutoria AND id_estado = 4"; // Solo actualiza si está pe
             return lista;
         }
 
-        public async Task<IEnumerable<ObtenerMateriaDto>> BuscarMateriasAsync(FiltrosMateriaDto filtros)
-        {
-            var lista = new List<ObtenerMateriaDto>();
+        //public async Task<IEnumerable<ObtenerMateriaDto>> BuscarMateriasAsync(FiltrosMateriaDto filtros)
+        //{
+        //    var lista = new List<ObtenerMateriaDto>();
 
-            var sql = @"
-                SELECT
-                    m.id_materia                         AS IdMateria,
-                    m.nom_materia                        AS MateriaNombre,
-                    c.nom_carrera                        AS CarreraNombre,
-                    CAST(s.num_semestre AS nvarchar(5))  AS Semestre
-                FROM dbo.materia m
-                INNER JOIN dbo.semestre s ON s.id_semestre = m.id_semestre
-                INNER JOIN dbo.carrera  c ON c.id_carrera  = m.id_carrera
-                WHERE
-                    (NULLIF(@MateriaNombre,'') IS NULL OR m.nom_materia LIKE '%' + @MateriaNombre + '%')
-                    AND (NULLIF(@Semestre,'')      IS NULL OR CAST(s.num_semestre AS nvarchar(5)) LIKE '%' + @Semestre + '%')
-                    AND (NULLIF(@CarreraNombre,'') IS NULL OR c.nom_carrera LIKE '%' + @CarreraNombre + '%')
-                ORDER BY c.nom_carrera, s.num_semestre, m.nom_materia
-                OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
+        //    var sql = @"
+        //        SELECT
+        //            m.id_materia                         AS IdMateria,
+        //            m.nom_materia                        AS MateriaNombre,
+        //            c.nom_carrera                        AS CarreraNombre,
+        //            CAST(s.num_semestre AS nvarchar(5))  AS Semestre
+        //        FROM dbo.materia m
+        //        INNER JOIN dbo.semestre s ON s.id_semestre = m.id_semestre
+        //        INNER JOIN dbo.carrera  c ON c.id_carrera  = m.id_carrera
+        //        WHERE
+        //            (NULLIF(@MateriaNombre,'') IS NULL OR m.nom_materia LIKE '%' + @MateriaNombre + '%')
+        //            AND (NULLIF(@Semestre,'')      IS NULL OR CAST(s.num_semestre AS nvarchar(5)) LIKE '%' + @Semestre + '%')
+        //            AND (NULLIF(@CarreraNombre,'') IS NULL OR c.nom_carrera LIKE '%' + @CarreraNombre + '%')
+        //        ORDER BY c.nom_carrera, s.num_semestre, m.nom_materia
+        //        OFFSET @Skip ROWS FETCH NEXT @Take ROWS ONLY;";
 
-            using var connection = _dbContextUtility.GetOpenConnection();
-            if (connection.State != ConnectionState.Open)
-                await connection.OpenAsync();
+        //    using var connection = _dbContextUtility.GetOpenConnection();
+        //    if (connection.State != ConnectionState.Open)
+        //        await connection.OpenAsync();
 
-            using var command = new SqlCommand(sql, connection);
+        //    using var command = new SqlCommand(sql, connection);
 
-            int skip = (filtros.Page - 1) * filtros.PageSize;
+        //    int skip = (filtros.Page - 1) * filtros.PageSize;
 
-            command.Parameters.AddWithValue("@MateriaNombre", (object?)filtros.MateriaNombre ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Semestre", (object?)filtros.Semestre ?? DBNull.Value);
-            command.Parameters.AddWithValue("@CarreraNombre", (object?)filtros.CarreraNombre ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Skip", skip);
-            command.Parameters.AddWithValue("@Take", filtros.PageSize);
+        //    command.Parameters.AddWithValue("@MateriaNombre", (object?)filtros.MateriaNombre ?? DBNull.Value);
+        //    command.Parameters.AddWithValue("@Semestre", (object?)filtros.Semestre ?? DBNull.Value);
+        //    command.Parameters.AddWithValue("@CarreraNombre", (object?)filtros.CarreraNombre ?? DBNull.Value);
+        //    command.Parameters.AddWithValue("@Skip", skip);
+        //    command.Parameters.AddWithValue("@Take", filtros.PageSize);
 
-            using var reader = await command.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                lista.Add(new ObtenerMateriaDto
-                {
-                    IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria")),
-                    MateriaNombre = reader.GetString(reader.GetOrdinal("MateriaNombre")),
-                    CarreraNombre = reader.GetString(reader.GetOrdinal("CarreraNombre")),
-                    Semestre = reader.GetString(reader.GetOrdinal("Semestre"))
-                });
-            }
+        //    using var reader = await command.ExecuteReaderAsync();
+        //    while (await reader.ReadAsync())
+        //    {
+        //        lista.Add(new ObtenerMateriaDto
+        //        {
+        //            IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria")),
+        //            MateriaNombre = reader.GetString(reader.GetOrdinal("MateriaNombre")),
+        //            CarreraNombre = reader.GetString(reader.GetOrdinal("CarreraNombre")),
+        //            Semestre = reader.GetString(reader.GetOrdinal("Semestre"))
+        //        });
+        //    }
 
-            return lista;
-        }
+        //    return lista;
+        //}
+        //public async Task<IEnumerable<MateriaDto>> ObtenerMateriasPorTutorAsync(int idTutor)
+        //{
+        //    const string sql = @"
+        //SELECT 
+        //    m.id_materia         AS IdMateria,
+        //    m.nom_materia        AS MateriaNombre,
+        //    c.nom_carrera        AS CarreraNombre,
+        //    s.num_semestre       AS Semestre
+        //FROM [EduConnect].[dbo].[materia] AS m
+        //INNER JOIN [EduConnect].[dbo].[carrera]  AS c ON m.id_carrera = c.id_carrera
+        //INNER JOIN [EduConnect].[dbo].[semestre] AS s ON m.id_semestre = s.id_semestre
+        //INNER JOIN [EduConnect].[dbo].[usuario]  AS u ON u.id_carrera = m.id_carrera
+        //WHERE 
+        //    u.id_usu = @IdTutor
+        //    AND s.num_semestre <= u.id_semestre
+        //ORDER BY 
+        //    s.num_semestre, 
+        //    m.nom_materia;";
+
+        //    var lista = new List<MateriaDto>();
+
+        //    try
+        //    {
+        //        using var connection = _dbContextUtility.GetOpenConnection();
+        //        using var command = new SqlCommand(sql, connection);
+        //        command.Parameters.AddWithValue("@IdTutor", idTutor);
+
+        //        using var reader = await command.ExecuteReaderAsync();
+        //        while (await reader.ReadAsync())
+        //        {
+        //            lista.Add(new MateriaDto
+        //            {
+        //                IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria")),
+        //                NombreMateria = reader.GetString(reader.GetOrdinal("MateriaNombre")),
+        //                CarreraNombre = reader.GetString(reader.GetOrdinal("CarreraNombre")),
+        //                Semestre = reader.GetByte(reader.GetOrdinal("Semestre"))
+        //            });
+        //        }
+
+        //        return lista;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new Exception("Error al obtener materias del tutor: " + ex.Message);
+        //    }
+        //}
+
 
         public async Task<IEnumerable<ObtenerMateriaDto>> ListarMateriasAsignadasAsync(int idUsuario)
         {
@@ -616,7 +668,7 @@ WHERE c.id_tutor = @IdTutor";
                     Fecha = fecha,
                     FechaFormateada = fecha.ToString("dd/MM/yyyy HH:mm"),
                     Calificacion = calificacion,
-         
+
                 };
                 lista.Add(dto);
             }
@@ -624,5 +676,257 @@ WHERE c.id_tutor = @IdTutor";
             return lista;
         }
 
+    
+    public async Task<PerfilTutorDto> ObtenerPerfilTutorAsync(int idTutor)
+        {
+            const string sql = @"
+SELECT 
+    u.id_usu AS IdUsuario,
+    CONCAT(u.nom_usu, ' ', u.apel_usu) AS NombreTutor,
+    u.correo_usu AS Correo,
+    u.tel_usu AS Telefono,
+    c.nom_carrera AS Carrera,
+    s.num_semestre AS Semestre,
+    ISNULL((
+        SELECT STRING_AGG(m.nom_materia, ', ')
+        FROM [EduConnect].[dbo].[tutor_materia] tm
+        INNER JOIN [EduConnect].[dbo].[materia] m ON tm.id_materia = m.id_materia
+        WHERE tm.id_usu = u.id_usu
+    ), 'Sin materias registradas') AS Materias,
+    u.avatar AS AvatarUrl -- si guardas la ruta o nombre del avatar
+FROM [EduConnect].[dbo].[usuario] u
+INNER JOIN [EduConnect].[dbo].[carrera] c ON u.id_carrera = c.id_carrera
+INNER JOIN [EduConnect].[dbo].[semestre] s ON u.id_semestre = s.id_semestre
+WHERE u.id_usu = @IdTutor
+  AND u.id_rol = 2 -- Tutor
+  AND u.id_estado = 1; -- Activo
+";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@IdTutor", idTutor);
+
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new PerfilTutorDto
+                {
+                    IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
+                    NombreTutor = reader.GetString(reader.GetOrdinal("NombreTutor")),
+                    Correo = reader.GetString(reader.GetOrdinal("Correo")),
+                    Telefono = reader.GetString(reader.GetOrdinal("Telefono")),
+                    Carrera = reader.GetString(reader.GetOrdinal("Carrera")),
+                    Semestre = reader["Semestre"].ToString(),
+                    Materias = reader.GetString(reader.GetOrdinal("Materias")),
+                    AvatarUrl = reader["AvatarUrl"] == DBNull.Value ? null : reader.GetString(reader.GetOrdinal("AvatarUrl"))
+                };
+            }
+
+            return null;
+        }
+        public async Task<ObtenerUsuarioDto?> ObtenerTutorPorId(int idUsuario)
+        {
+            const string sql = @"
+SELECT
+    u.id_usu         AS IdUsu,
+    u.nom_usu        AS Nombre,
+    u.apel_usu       AS Apellido,
+    u.id_tipo_ident  AS IdTipoIdent,
+    u.num_ident      AS NumIdent,
+    u.correo_usu     AS Correo,
+    u.tel_usu        AS TelUsu,
+    u.contras_usu    AS ContrasUsu,
+    u.id_carrera     AS IdCarrera,
+    u.id_semestre    AS IdSemestre,
+    u.id_rol         AS IdRol,
+    u.id_estado      AS IdEstado,
+    u.avatar         AS Avatar 
+FROM [EduConnect].[dbo].[usuario] AS u
+WHERE u.id_usu = @idUsu;";
+
+
+            try
+            {
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue("@idUsu", idUsuario);
+
+                using var reader = await command.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync())
+                {
+                    return new ObtenerUsuarioDto
+                    {
+                        IdUsu = reader.GetInt32(reader.GetOrdinal("IdUsu")),
+                        Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
+                        Apellido = reader.GetString(reader.GetOrdinal("Apellido")),
+                        IdTipoIdent = reader.GetByte(reader.GetOrdinal("IdTipoIdent")),
+                        NumIdent = reader.GetString(reader.GetOrdinal("NumIdent")),
+                        Correo = reader.GetString(reader.GetOrdinal("Correo")),
+                        TelUsu = reader.GetString(reader.GetOrdinal("TelUsu")),
+                        ContrasUsu = reader.GetString(reader.GetOrdinal("ContrasUsu")),
+                        //Manejo seguro de nulos
+                        IdCarrera = reader.IsDBNull(reader.GetOrdinal("IdCarrera"))
+                        ? (int?)null
+                        : reader.GetInt16(reader.GetOrdinal("IdCarrera")),
+
+                        IdSemestre = reader.IsDBNull(reader.GetOrdinal("IdSemestre"))
+                        ? (byte?)null
+                        : reader.GetByte(reader.GetOrdinal("IdSemestre")),
+                        IdRol = reader.GetByte(reader.GetOrdinal("IdRol")),
+                        IdEstado = reader.GetByte(reader.GetOrdinal("IdEstado")),
+                        Avatar = reader.IsDBNull(reader.GetOrdinal("Avatar"))
+                    ? null
+                    : reader.GetString(reader.GetOrdinal("Avatar"))
+
+                    };
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al consultar el usuario: " + ex.Message);
+            }
+        }
+        public async Task<bool> TutorTieneMateriasAsync(int idTutor)
+        {
+            const string sql = @"SELECT COUNT(*) 
+                         FROM [EduConnect].[dbo].[tutor_materia] 
+                         WHERE id_usu = @idTutor";
+
+            try
+            {
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@idTutor", idTutor);
+
+                int count = (int)await command.ExecuteScalarAsync();
+                return count > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al validar materias del tutor: " + ex.Message);
+            }
+        }
+        public async Task RegistrarMateriasTutorAsync(RegistrarMateriasTutorDto dto)
+        {
+            const string sqlMateriasExistentes = @"
+        SELECT id_materia 
+        FROM [EduConnect].[dbo].[tutor_materia]
+        WHERE id_usu = @idTutor";
+
+            const string sqlInsert = @"
+        INSERT INTO [EduConnect].[dbo].[tutor_materia] (id_usu, id_materia)
+        VALUES (@idTutor, @idMateria);";
+
+            const string sqlDelete = @"
+        DELETE FROM [EduConnect].[dbo].[tutor_materia]
+        WHERE id_usu = @idTutor AND id_materia = @idMateria;";
+
+            try
+            {
+                using var connection = _dbContextUtility.GetOpenConnection();
+
+                // 🔹 Obtener las materias actuales del tutor
+                var materiasActuales = new List<int>();
+                using (var cmdSelect = new SqlCommand(sqlMateriasExistentes, connection))
+                {
+                    cmdSelect.Parameters.AddWithValue("@idTutor", dto.IdTutor);
+                    using var reader = await cmdSelect.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        materiasActuales.Add(reader.GetInt32(0));
+                    }
+                }
+
+                // 🔹 Determinar las materias a insertar (nuevas)
+                var nuevasMaterias = dto.Materias.Except(materiasActuales).ToList();
+
+                // 🔹 Determinar las materias a eliminar (desmarcadas)
+                var materiasAEliminar = materiasActuales.Except(dto.Materias).ToList();
+
+                // 🔹 Insertar nuevas materias
+                foreach (var idMateria in nuevasMaterias)
+                {
+                    using var cmdInsert = new SqlCommand(sqlInsert, connection);
+                    cmdInsert.Parameters.AddWithValue("@idTutor", dto.IdTutor);
+                    cmdInsert.Parameters.AddWithValue("@idMateria", idMateria);
+                    await cmdInsert.ExecuteNonQueryAsync();
+                }
+
+                // 🔹 Eliminar materias que fueron desmarcadas
+                foreach (var idMateria in materiasAEliminar)
+                {
+                    using var cmdDelete = new SqlCommand(sqlDelete, connection);
+                    cmdDelete.Parameters.AddWithValue("@idTutor", dto.IdTutor);
+                    cmdDelete.Parameters.AddWithValue("@idMateria", idMateria);
+                    await cmdDelete.ExecuteNonQueryAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al registrar las materias del tutor: " + ex.Message);
+            }
+        }
+        public async Task<IEnumerable<MateriaDto>> ObtenerMateriasPorTutorAsync(int idTutor)
+        {
+            const string sql = @"
+    SELECT 
+        m.id_materia         AS IdMateria,
+        m.nom_materia        AS MateriaNombre,
+        c.nom_carrera        AS CarreraNombre,
+        s.num_semestre       AS Semestre,
+        CASE 
+            WHEN tm.id_materia IS NOT NULL THEN 1
+            ELSE 0
+        END AS TieneMateria
+    FROM [EduConnect].[dbo].[materia] AS m
+    INNER JOIN [EduConnect].[dbo].[carrera]  AS c ON m.id_carrera = c.id_carrera
+    INNER JOIN [EduConnect].[dbo].[semestre] AS s ON m.id_semestre = s.id_semestre
+    INNER JOIN [EduConnect].[dbo].[usuario]  AS u ON u.id_carrera = m.id_carrera
+    LEFT JOIN [EduConnect].[dbo].[tutor_materia] AS tm 
+        ON tm.id_usu = u.id_usu AND tm.id_materia = m.id_materia
+    WHERE 
+        u.id_usu = @IdTutor
+        AND s.num_semestre <= u.id_semestre
+    ORDER BY 
+        s.num_semestre, 
+        m.nom_materia;";
+
+            var lista = new List<MateriaDto>();
+
+            try
+            {
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@IdTutor", idTutor);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    lista.Add(new MateriaDto
+                    {
+                        IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria")),
+                        NombreMateria = reader.GetString(reader.GetOrdinal("MateriaNombre")),
+                        CarreraNombre = reader.GetString(reader.GetOrdinal("CarreraNombre")),
+                        Semestre = reader.GetByte(reader.GetOrdinal("Semestre")),
+                        TieneMateria = reader.GetInt32(reader.GetOrdinal("TieneMateria")) == 1
+                    });
+                }
+
+                return lista;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al obtener materias del tutor: " + ex.Message);
+            }
+        }
+
+
+
+
     }
+
 }

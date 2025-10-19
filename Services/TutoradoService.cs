@@ -176,16 +176,15 @@ namespace EduConnect_API.Services
 
             return await _tutoradoRepository.CrearSolicitudTutoria(solicitud);
         }
-        public async Task<ComentarioResponseDto> CrearComentario(CrearComentarioDto comentario)
+        public async Task<string> CrearComentarioAsync(CrearComentarioDto comentario)
         {
-            // Validaciones básicas
+            
             if (comentario.IdTutorado <= 0)
                 throw new ArgumentException("El ID del tutorado es obligatorio.");
 
             if (comentario.IdTutor <= 0)
                 throw new ArgumentException("El ID del tutor es obligatorio.");
 
-            // Validar que el tutorado existe y es tutorado
             if (!await _tutoradoRepository.ExisteUsuario(comentario.IdTutorado))
                 throw new ArgumentException("El tutorado no existe.");
 
@@ -193,15 +192,12 @@ namespace EduConnect_API.Services
             if (rolTutorado != 1)
                 throw new ArgumentException("El usuario no tiene permisos de tutorado.");
 
-            // Validar que el tutor existe y es tutor
             if (!await _tutoradoRepository.ExisteTutor(comentario.IdTutor))
                 throw new ArgumentException("El tutor no existe o no tiene permisos de tutor.");
 
-            // Validar calificación (1-5)
             if (comentario.Calificacion < 1 || comentario.Calificacion > 5)
                 throw new ArgumentException("La calificación debe estar entre 1 y 5 estrellas.");
 
-            // Validar texto del comentario
             if (string.IsNullOrWhiteSpace(comentario.Texto))
                 throw new ArgumentException("El comentario es obligatorio.");
 
@@ -211,9 +207,13 @@ namespace EduConnect_API.Services
             if (comentario.Texto.Length > 500)
                 throw new ArgumentException("El comentario no puede exceder los 500 caracteres.");
 
+            // ✅ Inserta el comentario (no devuelve datos)
+            await _tutoradoRepository.CrearComentarioAsync(comentario);
 
-            return await _tutoradoRepository.CrearComentario(comentario);
+            // ✅ Retorna un mensaje simple
+            return "Comentario creado correctamente.";
         }
+
 
         public async Task<IEnumerable<RankingTutorDto>> ObtenerRankingTutores()
         {
@@ -232,5 +232,29 @@ namespace EduConnect_API.Services
 
             return await _tutoradoRepository.ObtenerComentariosPorTutor(request.IdTutor);
         }
+        
+        public async Task<PerfilTutorDto> ObtenerPerfilTutorAsync(int idTutor)
+        {
+            try
+            {
+                return await _tutoradoRepository.ObtenerPerfilTutorAsync(idTutor);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al obtener el perfil del tutor: " + ex.Message);
+            }
+        }
+        public async Task<ObtenerUsuarioDto> ObtenerTutoradoPorIdAsync(int idTutorado)
+        {
+            try
+            {
+                return await _tutoradoRepository.ObtenerTutoradoPorId(idTutorado);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al obtener el perfil del tutor: " + ex.Message);
+            }
+        }
+
     }
 }

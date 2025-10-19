@@ -1,4 +1,5 @@
 ﻿using EduConnect_API.Dtos;
+using EduConnect_API.Repositories;
 using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Services.Interfaces;
 using System.Text.RegularExpressions;
@@ -117,8 +118,7 @@ namespace EduConnect_API.Services
 
             return await _tutorRepository.ObtenerMateriasTutor(idTutor);
         }
-        public Task<IEnumerable<ObtenerMateriaDto>> BuscarMateriasAsync(FiltrosMateriaDto filtros)
-            => _tutorRepository.BuscarMateriasAsync(filtros);
+
 
         public Task<IEnumerable<ObtenerMateriaDto>> ListarMateriasAsignadasAsync(int idUsuario)
             => _tutorRepository.ListarMateriasAsignadasAsync(idUsuario);
@@ -226,6 +226,47 @@ namespace EduConnect_API.Services
 
             return await _tutorRepository.ObtenerComentariosTutor(filtro);
         }
+        public async Task<ObtenerUsuarioDto> ObtenerTutorPorIdAsync(int idTutorado)
+        {
+            try
+            {
+                return await _tutorRepository.ObtenerTutorPorId(idTutorado);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al obtener el perfil del tutor: " + ex.Message);
+            }
+        }
+        public async Task<bool> ValidarMateriasTutorAsync(int idTutor)
+        {
+            try
+            {
+                return await _tutorRepository.TutorTieneMateriasAsync(idTutor);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al validar las materias del tutor: " + ex.Message);
+            }
+        }
+        public async Task<IEnumerable<MateriaDto>> ObtenerMateriasPorTutorAsync(int idTutor)
+        {
+            if (idTutor <= 0)
+                throw new ArgumentException("El ID del tutor es inválido.");
+
+            return await _tutorRepository.ObtenerMateriasPorTutorAsync(idTutor);
+        }
+        public async Task RegistrarMateriasTutorAsync(RegistrarMateriasTutorDto dto)
+        {
+            if (dto.IdTutor <= 0)
+                throw new ArgumentException("El ID del tutor no es válido.");
+
+            if (dto.Materias == null || !dto.Materias.Any())
+                throw new ArgumentException("Debes seleccionar al menos una materia.");
+
+            await _tutorRepository.RegistrarMateriasTutorAsync(dto);
+        }
+
+
 
 
 
