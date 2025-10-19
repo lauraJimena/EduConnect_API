@@ -17,7 +17,7 @@ namespace EduConnect_API.Repositories.Interfaces
         Task<DetalleSolicitudTutoriaDto> ObtenerDetalleSolicitud(int idTutoria);
         Task<IEnumerable<MateriaDto>> ObtenerMateriasTutor(int idTutor);
 
-        Task<IEnumerable<ObtenerMateriaDto>> BuscarMateriasAsync(FiltrosMateriaDto filtros);
+        //Task<IEnumerable<ObtenerMateriaDto>> BuscarMateriasAsync(FiltrosMateriaDto filtros);
         Task<IEnumerable<ObtenerMateriaDto>> ListarMateriasAsignadasAsync(int idUsuario);
         Task<SeleccionarGuardarMateriaResultadoDto> SeleccionarYGuardarAsync(SeleccionarGuardarMateriaDto dto);
 
@@ -28,7 +28,9 @@ namespace EduConnect_API.Repositories.Interfaces
         Task<int?> ObtenerCarreraDeUsuario(int idUsuario);
 
         Task<IEnumerable<ComentarioTutorDto>> ObtenerComentariosTutor(FiltroComentariosTutorDto filtro);
-
-
+        Task<ObtenerUsuarioDto?> ObtenerTutorPorId(int idTutorado);
+        Task<bool> TutorTieneMateriasAsync(int idTutor);
+        Task<IEnumerable<MateriaDto>> ObtenerMateriasPorTutorAsync(int idTutor);
+        Task RegistrarMateriasTutorAsync(RegistrarMateriasTutorDto dto);
     }
 }

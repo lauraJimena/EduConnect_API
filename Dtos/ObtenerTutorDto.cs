@@ -9,6 +9,7 @@
         public string MateriaNombre { get; set; } = string.Empty;
         public byte Semestre { get; set; }
         public string CarreraNombre { get; set; } = string.Empty;
+        public string? Avatar { get; set; }
 
     }
 }

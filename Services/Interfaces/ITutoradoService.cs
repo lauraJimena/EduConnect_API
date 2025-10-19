@@ -12,9 +12,13 @@ namespace EduConnect_API.Services.Interfaces
         Task<IEnumerable<SolicitudTutoriaDto>> ObtenerSolicitudesTutorias(FiltroSolicitudesDto filtro);
         Task<IEnumerable<EstadoSolicitudDto>> ObtenerEstadosSolicitud();
         Task<int> CrearSolicitudTutoria(SolicitudTutoriaRequestDto solicitud);
-        Task<ComentarioResponseDto> CrearComentario(CrearComentarioDto comentario);
+        
         Task<IEnumerable<RankingTutorDto>> ObtenerRankingTutores();
 
         Task<IEnumerable<ComentarioTutorInfoDto>> ObtenerComentariosPorTutor(ComentariosTutorRequestDto request);
+        
+        Task<PerfilTutorDto> ObtenerPerfilTutorAsync(int idTutor);
+        Task<ObtenerUsuarioDto> ObtenerTutoradoPorIdAsync(int idTutorado);
+        Task <string>CrearComentarioAsync(CrearComentarioDto dto);
     }
 }

@@ -9,6 +9,7 @@
         public string NumIdent { get; set; } = string.Empty;
         public string TelUsu { get; set; } = string.Empty;
         public string Correo { get; set; } = string.Empty;
+        public string? Avatar { get; set; }
     }
 }
     

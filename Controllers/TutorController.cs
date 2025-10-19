@@ -164,17 +164,17 @@ namespace EduConnect_API.Controllers
             }
         }
         // 🔹 Buscar materias por filtros (nombre, semestre, carrera)
-        [HttpPost("BuscarMaterias")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> BuscarMaterias([FromBody] FiltrosMateriaDto filtros)
-        {
-            filtros.MateriaNombre = Clean(filtros.MateriaNombre);
-            filtros.Semestre = Clean(filtros.Semestre);
-            filtros.CarreraNombre = Clean(filtros.CarreraNombre);
+        //[HttpPost("BuscarMaterias")]
+        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        //public async Task<IActionResult> BuscarMaterias([FromBody] FiltrosMateriaDto filtros)
+        //{
+        //    filtros.MateriaNombre = Clean(filtros.MateriaNombre);
+        //    filtros.Semestre = Clean(filtros.Semestre);
+        //    filtros.CarreraNombre = Clean(filtros.CarreraNombre);
 
-            var resultado = await _tutorService.BuscarMateriasAsync(filtros);
-            return Ok(resultado);
-        }
+        //    var resultado = await _tutorService.BuscarMateriasAsync(filtros);
+        //    return Ok(resultado);
+        //}
 
         // 🔹 Listar las materias ya asignadas al tutor
         [HttpGet("ObtenerAsignadas")]
@@ -212,5 +212,92 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        [HttpGet("ObtenerTutorPorId/{idUsuario}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> ObtenerTutoradoPorId(int idUsuario)
+        {
+            try
+            {
+                // Llama al servicio
+                var usuario = await _tutorService.ObtenerTutorPorIdAsync(idUsuario);
+
+                // Si no existe
+                if (usuario == null)
+                    return NotFound(new { mensaje = "Tutorado no encontrado." });
+
+                // Retorna los datos correctamente
+                return Ok(usuario);
+            }
+            catch (Exception ex)
+            {
+                // Manejo de errores controlado
+                return StatusCode(500, new { mensaje = "Error interno del servidor: " + ex.Message });
+            }
+        }
+        [HttpGet("ValidarMaterias/{idTutor}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> ValidarMateriasTutor(int idTutor)
+        {
+            try
+            {
+                bool tieneMaterias = await _tutorService.ValidarMateriasTutorAsync(idTutor);
+
+                return Ok(new
+                {
+                    tieneMaterias = tieneMaterias,
+                    mensaje = tieneMaterias
+                        ? "El tutor ya tiene materias registradas."
+                        : "El tutor no tiene materias registradas."
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Error interno al validar materias: " + ex.Message });
+            }
+        }
+        // GET: Tutor/RegistrarMaterias
+        [HttpGet("MateriasPorTutor/{idTutor}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> ObtenerMateriasPorTutor(int idTutor)
+        {
+            try
+            {
+                var materias = await _tutorService.ObtenerMateriasPorTutorAsync(idTutor);
+
+                if (materias == null )
+                    return NotFound(new { mensaje = "No se encontraron materias disponibles para este tutor." });
+
+                return Ok(materias);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Error interno: " + ex.Message });
+            }
+        }
+        [HttpPost("RegistrarMaterias")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> RegistrarMaterias([FromBody] RegistrarMateriasTutorDto dto)
+        {
+            try
+            {
+                await _tutorService.RegistrarMateriasTutorAsync(dto);
+                return Ok(new { message = "Materias registradas correctamente." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Error interno: " + ex.Message });
+            }
+        }
+
+
+
     }
 }

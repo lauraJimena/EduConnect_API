@@ -193,21 +193,22 @@ namespace EduConnect_API.Repositories
         public async Task<ObtenerUsuarioDto?> ObtenerUsuarioPorId(int idUsuario)
         {
             const string sql = @"
- SELECT
-     u.id_usu         AS IdUsu,
-     u.nom_usu        AS Nombre,
-     u.apel_usu       AS Apellido,
-     u.id_tipo_ident  AS IdTipoIdent,
-     u.num_ident      AS NumIdent,
-     u.correo_usu     AS Correo,
-     u.tel_usu        AS TelUsu,
-     u.contras_usu    AS ContrasUsu,
-     u.id_carrera     AS IdCarrera,
-     u.id_semestre    AS IdSemestre,
-     u.id_rol         AS IdRol,
-     u.id_estado      AS IdEstado
- FROM [EduConnect].[dbo].[usuario] AS u
- WHERE u.id_usu = @idUsu;";
+SELECT
+    u.id_usu         AS IdUsu,
+    u.nom_usu        AS Nombre,
+    u.apel_usu       AS Apellido,
+    u.id_tipo_ident  AS IdTipoIdent,
+    u.num_ident      AS NumIdent,
+    u.correo_usu     AS Correo,
+    u.tel_usu        AS TelUsu,
+    u.contras_usu    AS ContrasUsu,
+    u.id_carrera     AS IdCarrera,
+    u.id_semestre    AS IdSemestre,
+    u.id_rol         AS IdRol,
+    u.id_estado      AS IdEstado,
+    u.avatar         AS Avatar 
+FROM [EduConnect].[dbo].[usuario] AS u
+WHERE u.id_usu = @idUsu;";
 
 
             try
@@ -231,10 +232,19 @@ namespace EduConnect_API.Repositories
                         Correo = reader.GetString(reader.GetOrdinal("Correo")),
                         TelUsu = reader.GetString(reader.GetOrdinal("TelUsu")),
                         ContrasUsu = reader.GetString(reader.GetOrdinal("ContrasUsu")),
-                        IdCarrera = reader.GetInt16(reader.GetOrdinal("IdCarrera")),
-                        IdSemestre = reader.GetByte(reader.GetOrdinal("IdSemestre")),
+                        //Manejo seguro de nulos
+                        IdCarrera = reader.IsDBNull(reader.GetOrdinal("IdCarrera"))
+                        ? (int?)null
+                        : reader.GetInt16(reader.GetOrdinal("IdCarrera")),
+
+                        IdSemestre = reader.IsDBNull(reader.GetOrdinal("IdSemestre"))
+                        ? (byte?)null
+                        : reader.GetByte(reader.GetOrdinal("IdSemestre")),
                         IdRol = reader.GetByte(reader.GetOrdinal("IdRol")),
-                        IdEstado = reader.GetByte(reader.GetOrdinal("IdEstado"))
+                        IdEstado = reader.GetByte(reader.GetOrdinal("IdEstado")),
+                        Avatar = reader.IsDBNull(reader.GetOrdinal("Avatar"))
+                    ? null
+                    : reader.GetString(reader.GetOrdinal("Avatar"))
 
                     };
                 }
@@ -246,6 +256,8 @@ namespace EduConnect_API.Repositories
                 throw new Exception("Error al consultar el usuario: " + ex.Message);
             }
         }
+
+
 
         public async Task<int> ActualizarUsuario(ActualizarUsuarioDto usuario)
         {

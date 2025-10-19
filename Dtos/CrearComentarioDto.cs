@@ -6,6 +6,7 @@
         public int Calificacion { get; set; }
         public int IdTutor { get; set; }
         public int IdTutorado { get; set; }
+        public int IdEstado { get; set; }
     }
 }
 
