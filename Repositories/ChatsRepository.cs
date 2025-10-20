@@ -147,7 +147,7 @@ namespace EduConnect_API.Repositories
                 SELECT id_mensaje, id_chat, id_usu, contenido, fecha_envio
                 FROM mensaje
                 WHERE id_chat = @idChat
-                ORDER BY fecha_envio ASC";
+                ORDER BY fecha_envio DESC";
             using var connection = _dbContextUtility.GetOpenConnection();
             using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@idChat", idChat);
