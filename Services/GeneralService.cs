@@ -103,6 +103,7 @@ namespace EduConnect_API.Services
                 throw new Exception("El usuario no está activo");
           
             respuesta.IdUsuario = result.IdUsu; // Agregar el ID antes de crear el token
+            respuesta.IdRol = result.IdRol;
             respuesta = JwtUtility.GenTokenkey(respuesta, _jwtSettings);
             if (respuesta == null)
                 throw new Exception("Error al generar el token de autenticación. Verifique la configuración JWT.");

@@ -284,7 +284,15 @@ namespace EduConnect_API.Services
             return await _administradorRepository.CambiarEstadoMateria(idMateria, 1); // Estado 1 = Activo
         }
 
-        
+        public async Task<IEnumerable<ReporteTutorDto>> ObtenerReporteTutoresAsync()
+        {
+            return await _administradorRepository.ObtenerReporteTutoresAsync();
+        }
+        public async Task<IEnumerable<ReporteTutoradoDto>> ObtenerReporteTutoradosActivosAsync()
+        {
+            return await _administradorRepository.ObtenerReporteTutoradosActivosAsync();
+        }
+
 
 
     }

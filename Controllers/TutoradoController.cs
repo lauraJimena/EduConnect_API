@@ -13,11 +13,13 @@ namespace EduConnect_API.Controllers
     {
         private readonly ITutoradoService _tutoradoService;
         private readonly IChatsService _chatsService;
+      
 
         public TutoradoController(ITutoradoService tutoradoService, IChatsService chatsService)
         {
             _tutoradoService = tutoradoService;
             _chatsService = chatsService;
+            
         }
 
         // trae todas las tutorías del tutorado
@@ -146,7 +148,7 @@ namespace EduConnect_API.Controllers
                     });
 
                     // ✅ Devolver el ID al frontend si lo necesitas para navegación
-                    return Ok(new { mensaje = "Solicitud de tutoría creada con éxito. Estado: Pendiente", idTutoria });
+                    return Ok(new { mensaje = "Solicitud de tutoría creada con éxito. ", idTutoria });
                 }
                 else
                 {
@@ -251,7 +253,24 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, new { mensaje = "Error interno del servidor: " + ex.Message });
             }
         }
-       
+        [HttpPost("EnviarConfirmacionTutoria")]
+        public async Task<IActionResult> EnviarConfirmacionTutoria([FromQuery] int idTutoria)
+        {
+            try
+            {
+                var resultado = await _tutoradoService.EnviarCorreoConfirmacionTutoriaAsync(idTutoria);
+
+                if (resultado)
+                    return Ok("✅ Correo enviado correctamente.");
+                else
+                    return BadRequest("❌ No se pudo enviar el correo.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error en el servidor: {ex.Message}");
+            }
+        }
+
 
 
     }

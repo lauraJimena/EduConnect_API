@@ -2,6 +2,7 @@
 using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Utilities;
 using Microsoft.Data.SqlClient;
+using System.Data;
 using System.Text;
 
 namespace EduConnect_API.Repositories
@@ -258,7 +259,6 @@ WHERE u.id_usu = @idUsu;";
         }
 
 
-
         public async Task<int> ActualizarUsuario(ActualizarUsuarioDto usuario)
         {
             const string sql = @"
@@ -268,10 +268,11 @@ SET nom_usu = @nom_usu,
     id_tipo_ident = @id_tipo_ident,
     num_ident = @num_ident,
     correo_usu = @correo_usu,
-    tel_usu = @tel_usu,        
+    tel_usu = @tel_usu,    
     id_carrera = @id_carrera,
     id_semestre = @id_semestre,
-    id_rol = @id_rol
+    id_rol = @id_rol,
+    avatar = @avatar
     
 WHERE id_usu = @id_usu";
 
@@ -286,10 +287,11 @@ WHERE id_usu = @id_usu";
                 command.Parameters.AddWithValue("@id_tipo_ident", usuario.IdTipoIdent);
                 command.Parameters.AddWithValue("@num_ident", usuario.NumIdent);
                 command.Parameters.AddWithValue("@correo_usu", usuario.Correo);
-                command.Parameters.AddWithValue("@tel_usu", usuario.TelUsu);
+                command.Parameters.AddWithValue("@tel_usu", usuario.TelUsu);              
                 command.Parameters.AddWithValue("@id_carrera", usuario.IdCarrera);
                 command.Parameters.AddWithValue("@id_semestre", usuario.IdSemestre);
                 command.Parameters.AddWithValue("@id_rol", usuario.IdRol);
+                command.Parameters.AddWithValue("@avatar", usuario.Avatar);
 
 
                 return await command.ExecuteNonQueryAsync();
@@ -415,7 +417,7 @@ WHERE m.id_materia = @IdMateria";
                     IdEstado = Convert.ToInt32(reader["IdEstado"]),
                     Estado = reader.GetString(reader.GetOrdinal("Estado")),
                     IdSemestre = reader.GetInt32(reader.GetOrdinal("IdSemestre")),
-                    
+
                     Semestre = Convert.ToString(reader["Semestre"]),
                     IdCarrera = reader.GetInt32(reader.GetOrdinal("IdCarrera")),
                     Carrera = reader.GetString(reader.GetOrdinal("Carrera"))
@@ -448,7 +450,7 @@ VALUES
             return await command.ExecuteNonQueryAsync();
         }
 
-        
+
         public async Task<bool> ExisteMateria(int idMateria)
         {
             const string sql = "SELECT COUNT(1) FROM [EduConnect].[dbo].[materia] WHERE id_materia = @id_materia";
@@ -549,6 +551,63 @@ WHERE id_materia = @id_materia";
             command.Parameters.AddWithValue("@id_estado", idEstado);
 
             return await command.ExecuteNonQueryAsync();
+        }
+
+    
+    public async Task<IEnumerable<ReporteTutorDto>> ObtenerReporteTutoresAsync()
+        {
+            var lista = new List<ReporteTutorDto>();
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand("dbo.usp_Reporte_TutoresActivosInactivos", connection);
+            command.CommandType = CommandType.StoredProcedure;
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var dto = new ReporteTutorDto
+                {
+                    IdTutor = reader.GetInt32(reader.GetOrdinal("IdTutor")),
+                    NombreTutor = reader.IsDBNull(reader.GetOrdinal("NombreTutor")) ? "Sin nombre" : reader.GetString(reader.GetOrdinal("NombreTutor")),
+                    Carrera = reader.IsDBNull(reader.GetOrdinal("Carrera")) ? "Sin carrera" : reader.GetString(reader.GetOrdinal("Carrera")),
+                    Semestre = reader.IsDBNull(reader.GetOrdinal("Semestre")) ? 0 : Convert.ToInt32(reader["Semestre"]),
+                    Estado = reader.IsDBNull(reader.GetOrdinal("Estado")) ? "Desconocido" : reader.GetString(reader.GetOrdinal("Estado")),
+                    CantidadMaterias = reader.IsDBNull(reader.GetOrdinal("CantidadMaterias")) ? 0 : reader.GetInt32(reader.GetOrdinal("CantidadMaterias")),
+                    PromedioCalificacion = reader.IsDBNull(reader.GetOrdinal("PromedioCalificacion")) ? 0 : Convert.ToDouble(reader["PromedioCalificacion"])
+                };
+                lista.Add(dto);
+            }
+
+            return lista;
+        }
+        public async Task<IEnumerable<ReporteTutoradoDto>> ObtenerReporteTutoradosActivosAsync()
+        {
+            var lista = new List<ReporteTutoradoDto>();
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand("dbo.usp_Reporte_TutoradosActivos", connection);
+            command.CommandType = CommandType.StoredProcedure;
+
+            using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var dto = new ReporteTutoradoDto
+                {
+                    IdUsuario = reader.GetInt32(reader.GetOrdinal("id_usu")),
+                    NombreTutorado = reader.GetString(reader.GetOrdinal("NombreTutorado")),
+                    Carrera = reader.GetString(reader.GetOrdinal("Carrera")),
+                    TotalTutorias = reader.GetInt32(reader.GetOrdinal("TotalTutorias")),
+                    UltimaTutoria = reader["UltimaTutoria"] == DBNull.Value
+                        ? null
+                        : Convert.ToDateTime(reader["UltimaTutoria"]),
+                    MateriasMasSolicitadas = reader["MateriasMasSolicitadas"].ToString() ?? "Sin registros"
+                };
+
+                lista.Add(dto);
+            }
+
+            return lista;
         }
 
     }

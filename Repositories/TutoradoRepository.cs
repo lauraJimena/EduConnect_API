@@ -111,7 +111,7 @@ SET nom_usu = @nom_usu,
     num_ident = @num_ident,
     correo_usu = @correo_usu,
     tel_usu = @tel_usu,
-    avatar = @avatar -- ✅ Nuevo campo agregado
+    avatar = @avatar 
 WHERE id_usu = @id_usu";
 
             try
@@ -710,8 +710,33 @@ WHERE u.id_usu = @idUsu;";
                 throw new Exception("Error al consultar el usuario: " + ex.Message);
             }
         }
+        public async Task<DatosCorreoTutoriaDto?> ObtenerDatosTutoriaAsync(int idTutoria)
+        {
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand("dbo.usp_Tutoria_ObtenerDatosCorreo", connection);
+            command.CommandType = CommandType.StoredProcedure;
+            command.Parameters.AddWithValue("@IdTutoria", idTutoria);
 
+            using var reader = await command.ExecuteReaderAsync();
+
+            if (await reader.ReadAsync())
+            {
+                return new DatosCorreoTutoriaDto
+                {
+                    NombreTutorado = reader["Tutorado"].ToString() ?? "",
+                    CorreoTutorado = reader["CorreoTutorado"].ToString() ?? "",
+                    NombreTutor = reader["Tutor"].ToString() ?? "",
+                    Materia = reader["Materia"].ToString() ?? "",
+                    Fecha = Convert.ToDateTime(reader["Fecha"]),
+                    Hora = reader["Hora"].ToString() ?? ""
+                };
+            }
+
+            return null;
+        }
     }
 
-    }
+}
+
+    
 

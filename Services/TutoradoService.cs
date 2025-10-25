@@ -5,17 +5,27 @@ using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Services.Interfaces;
 using EduConnect_API.Services.Interfaces;
+using EduConnect_API.Utilities;
+using MailKit.Security;
+using Microsoft.Extensions.Logging;
+using MimeKit;
+using System.Net.Mail;
 using System.Text.RegularExpressions;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace EduConnect_API.Services
 {
     public class TutoradoService : ITutoradoService
     {
         private readonly ITutoradoRepository _tutoradoRepository;
+        private readonly CorreoConfigUtility _config;
+        private readonly ILogger _logger;
 
-        public TutoradoService(ITutoradoRepository tutoradoRepository)
+        public TutoradoService(ITutoradoRepository tutoradoRepository, IConfiguration config, ILogger<TutoradoService> logger)
         {
             _tutoradoRepository = tutoradoRepository;
+            _logger = logger;
+            _config = config.GetSection("CorreoConfigUtility").Get<CorreoConfigUtility>()!;
         }
 
         public Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialAsync(int idTutorado, List<int>? idsEstado)
@@ -178,7 +188,7 @@ namespace EduConnect_API.Services
         }
         public async Task<string> CrearComentarioAsync(CrearComentarioDto comentario)
         {
-            
+
             if (comentario.IdTutorado <= 0)
                 throw new ArgumentException("El ID del tutorado es obligatorio.");
 
@@ -232,7 +242,7 @@ namespace EduConnect_API.Services
 
             return await _tutoradoRepository.ObtenerComentariosPorTutor(request.IdTutor);
         }
-        
+
         public async Task<PerfilTutorDto> ObtenerPerfilTutorAsync(int idTutor)
         {
             try
@@ -255,6 +265,139 @@ namespace EduConnect_API.Services
                 throw new Exception("Error al obtener el perfil del tutor: " + ex.Message);
             }
         }
+        public async Task<bool> EnviarCorreoConfirmacionTutoriaAsync(int idTutoria)
+        {
+            try
+            {
+                var datos = await _tutoradoRepository.ObtenerDatosTutoriaAsync(idTutoria);
+                if (datos == null)
+                    return false;
+
+                // 1️⃣ Cargar plantilla y reemplazar variables
+                string plantilla = CorreoManejoPlantillasUtility.CargarPlantilla("ConfirmacionTutoria.cshtml");
+                string cuerpo = CorreoManejoPlantillasUtility.ReemplazarVariables(plantilla, new Dictionary<string, string>
+        {
+            { "NombreTutorado", datos.NombreTutorado },
+            { "NombreTutor", datos.NombreTutor },
+            { "Materia", datos.Materia },
+            { "Fecha", datos.Fecha.ToString("dd/MM/yyyy") },
+            { "Hora", datos.Hora },
+            { "AñoActual", DateTime.Now.Year.ToString() }
+        });
+
+                // 2️⃣ Crear mensaje MIME
+                var mensaje = new MimeMessage();
+                mensaje.From.Add(new MailboxAddress(_config.DisplayName, _config.Email));
+                mensaje.To.Add(MailboxAddress.Parse(datos.CorreoTutorado));
+                mensaje.Subject = $"Confirmación de Tutoría - {datos.Materia}";
+
+                // ✅ Usar un solo BodyBuilder
+                var builder = new BodyBuilder();
+
+                // ✅ Agregar imagen embebida
+                var rutaLogo = Path.Combine(Directory.GetCurrentDirectory(), "Utilities", "PlantillasCorreo", "img", "Logo.png");
+                if (File.Exists(rutaLogo))
+                {
+                    var logo = builder.LinkedResources.Add(rutaLogo);
+                    logo.ContentId = "logoEduConnect"; // debe coincidir con el cid: del HTML
+                }
+                // ✅ Nueva imagen (saludar)
+                var rutaSaludar = Path.Combine(Directory.GetCurrentDirectory(), "Utilities", "PlantillasCorreo", "img", "Saludar.png");
+                if (File.Exists(rutaSaludar))
+                {
+                    var saludarImg = builder.LinkedResources.Add(rutaSaludar);
+                    saludarImg.ContentId = "saludar"; // debe coincidir con el cid del HTML
+                }
+
+                builder.HtmlBody = cuerpo;
+                mensaje.Body = builder.ToMessageBody();
+
+                // 3️⃣ Enviar correo con MailKit
+                using var smtp = new MailKit.Net.Smtp.SmtpClient();
+
+                _logger.LogInformation($"📡 Iniciando conexión SMTP a {_config.Host}:{_config.Port}...");
+
+                await smtp.ConnectAsync(_config.Host, _config.Port, SecureSocketOptions.StartTls);
+                _logger.LogInformation("✅ Conexión SMTP establecida correctamente.");
+
+                await smtp.AuthenticateAsync(_config.Email, _config.Password);
+                _logger.LogInformation("🔐 Autenticación exitosa.");
+
+                await smtp.SendAsync(mensaje);
+                _logger.LogInformation($"📨 Correo enviado correctamente a {datos.CorreoTutorado}.");
+
+                await smtp.DisconnectAsync(true);
+                _logger.LogInformation("🔌 Desconectado de SMTP.");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error al enviar correo: {ex.Message}");
+                return false;
+            }
+        }
+
+        //public async Task<bool> EnviarCorreoConfirmacionTutoriaAsync(int idTutoria)
+        //{
+        //    try
+        //    {
+        //        var datos = await _tutoradoRepository.ObtenerDatosTutoriaAsync(idTutoria);
+        //        if (datos == null)
+        //            return false;
+
+        //        // 1️⃣ Cargar plantilla y reemplazar variables
+        //        string plantilla = CorreoManejoPlantillasUtility.CargarPlantilla("ConfirmacionTutoria.cshtml");
+        //        string cuerpo = CorreoManejoPlantillasUtility.ReemplazarVariables(plantilla, new Dictionary<string, string>
+        //{
+        //    { "NombreTutorado", datos.NombreTutorado },
+        //    { "NombreTutor", datos.NombreTutor },
+        //    { "Materia", datos.Materia },
+        //    { "Fecha", datos.Fecha.ToString("dd/MM/yyyy") },
+        //    { "Hora", datos.Hora },
+        //    { "AñoActual", DateTime.Now.Year.ToString() }
+        //});
+
+        //        // 2Crear mensaje MIME
+        //        var mensaje = new MimeMessage();
+        //        mensaje.From.Add(new MailboxAddress(_config.DisplayName, _config.Email));
+        //        mensaje.To.Add(MailboxAddress.Parse(datos.CorreoTutorado));
+        //        mensaje.Subject = $"Confirmación de Tutoría - {datos.Materia}";
+        //        mensaje.Body = new BodyBuilder { HtmlBody = cuerpo }.ToMessageBody();
+        //        var builder = new BodyBuilder();
+
+        //        // Agregar imagen embebida
+        //        var rutaLogo = Path.Combine(Directory.GetCurrentDirectory(), "Utilities", "PlantillasCorreo", "img", "Logo.png");
+        //        var logo = builder.LinkedResources.Add(rutaLogo);
+        //        logo.ContentId = "logoEduConnect"; // 🔗 Debe coincidir con el "cid:" en el HTML
+
+        //        builder.HtmlBody = cuerpo;
+        //        // 3️⃣ Enviar correo con MailKit
+        //        using var smtp = new MailKit.Net.Smtp.SmtpClient();
+
+        //        _logger.LogInformation($"📡 Iniciando conexión SMTP a {_config.Host}:{_config.Port}...");
+
+        //        await smtp.ConnectAsync(_config.Host, _config.Port, SecureSocketOptions.StartTls);
+        //        _logger.LogInformation("✅ Conexión SMTP establecida correctamente.");
+
+        //        await smtp.AuthenticateAsync(_config.Email, _config.Password);
+        //        _logger.LogInformation("🔐 Autenticación exitosa.");
+
+        //        await smtp.SendAsync(mensaje);
+        //        _logger.LogInformation($"📨 Correo enviado correctamente a {datos.CorreoTutorado}.");
+
+        //        await smtp.DisconnectAsync(true);
+        //        _logger.LogInformation("🔌 Desconectado de SMTP.");
+
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError($"Error al enviar correo: {ex.Message}");
+        //        return false;
+        //    }
+        //}
+
 
     }
 }
