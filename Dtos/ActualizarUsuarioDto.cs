@@ -10,6 +10,7 @@ namespace EduConnect_API.Dtos
         public string NumIdent { get; set; } = string.Empty;
         public string TelUsu { get; set; } = string.Empty;
         public string ContrasUsu { get; set; } = string.Empty;
+        public string Avatar { get; set; } = string.Empty;
         public int IdCarrera { get; set; }
         public int IdSemestre { get; set; }
         public int IdRol { get; set; }

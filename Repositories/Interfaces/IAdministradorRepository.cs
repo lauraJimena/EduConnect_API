@@ -20,6 +20,8 @@ namespace EduConnect_API.Repositories.Interfaces
         Task<bool> ExisteCodigoMateria(string codMateria, int? idMateriaExcluir = null);
         Task<bool> ExisteCarrera(int idCarrera);
         Task<bool> ExisteSemestre(int idSemestre);
+        Task<IEnumerable<ReporteTutorDto>> ObtenerReporteTutoresAsync();
+        Task<IEnumerable<ReporteTutoradoDto>> ObtenerReporteTutoradosActivosAsync();
     }
 
 }

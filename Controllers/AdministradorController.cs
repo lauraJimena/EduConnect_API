@@ -260,6 +260,37 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        [HttpGet("ReporteTutores")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ActionResult<IEnumerable<ReporteTutorDto>>> ObtenerReporteTutores()
+        {
+            try
+            {
+                var reporte = await _administradorService.ObtenerReporteTutoresAsync();
+                return Ok(reporte);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
+        [HttpGet("ReporteTutoradosActivos")]
+        
+        [CustomAuthorize(3)]
+       
+        public async Task<ActionResult<IEnumerable<ReporteTutoradoDto>>> ObtenerReporteTutoradosActivos()
+        {
+            try
+            {
+                var reporte = await _administradorService.ObtenerReporteTutoradosActivosAsync();
+                return Ok(reporte);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno: " + ex.Message);
+            }
+        }
+
     }
 }
 

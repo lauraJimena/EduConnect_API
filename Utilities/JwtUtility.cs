@@ -34,9 +34,9 @@ namespace EduConnect_API.Utilities
                 // Definir las reclamaciones
                 var claims = new List<Claim>
                 {
-                    new Claim("TiempoExpiracion", expireTime.ToString("yyyy-MM-dd HH:mm:ss")),
-                    
-                    new Claim("IdUsuario", userToken.IdUsuario.ToString())
+                    new Claim("TiempoExpiracion", expireTime.ToString("yyyy-MM-dd HH:mm:ss")),                    
+                    new Claim("IdUsuario", userToken.IdUsuario.ToString()),
+                    new Claim("IdRol", userToken.IdRol.ToString())
 
                 };
 

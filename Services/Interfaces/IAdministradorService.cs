@@ -1,4 +1,5 @@
 ﻿using EduConnect_API.Dtos;
+using Microsoft.AspNetCore.Mvc;
 
 namespace EduConnect_API.Services.Interfaces
 {
@@ -18,6 +19,7 @@ namespace EduConnect_API.Services.Interfaces
         Task<int> ActualizarMateria(ActualizarMateriaDto materia);
         Task<int> ActivarMateria(int idMateria);
         Task<int> InactivarMateria(int idMateria);
-
+        Task<IEnumerable<ReporteTutorDto>> ObtenerReporteTutoresAsync();
+        Task<IEnumerable<ReporteTutoradoDto>> ObtenerReporteTutoradosActivosAsync();
     }
 }

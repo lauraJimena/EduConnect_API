@@ -50,7 +50,7 @@ namespace EduConnect_API.Repositories
         {
             const string sql = @"SELECT 
                         u.id_usu AS IdUsuario,
-                        u.id_estado
+                        u.id_estado, u.id_rol 
                     FROM [EduConnect].[dbo].[usuario] AS u WHERE 
                         u.num_ident = @num_ident 
                         AND u.contras_usu = @contras_usu
@@ -76,7 +76,9 @@ namespace EduConnect_API.Repositories
                     //Estado = reader.GetString(6),
                     //Carrera = reader.GetString(7),
                     //IdRol= reader.GetByte(8), 
-                    IdEstado = reader.GetByte(1)
+                    IdEstado = reader.GetByte(1),
+                    IdRol= reader.GetByte(2)
+
 
                 };
             }
