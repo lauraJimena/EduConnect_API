@@ -50,17 +50,16 @@ namespace EduConnect_API.Repositories
         {
             const string sql = @"SELECT 
                         u.id_usu AS IdUsuario,
-                        u.id_estado, u.id_rol 
+                        u.id_estado, u.id_rol,
+                        u.contras_usu AS ContrasenaHash
                     FROM [EduConnect].[dbo].[usuario] AS u WHERE 
                         u.num_ident = @num_ident 
-                        AND u.contras_usu = @contras_usu
                         AND u.id_estado = 1";
 
             using var connection = _dbContextUtility.GetOpenConnection();
             using var command = new SqlCommand(sql, connection);
 
             command.Parameters.AddWithValue("@num_ident", usuario.NumIdent);
-            command.Parameters.AddWithValue("@contras_usu", usuario.ContrasUsu);
 
             using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
@@ -77,7 +76,8 @@ namespace EduConnect_API.Repositories
                     //Carrera = reader.GetString(7),
                     //IdRol= reader.GetByte(8), 
                     IdEstado = reader.GetByte(1),
-                    IdRol= reader.GetByte(2)
+                    IdRol= reader.GetByte(2),
+                    ContrasenaHash = reader.GetString(3)
 
 
                 };
