@@ -224,6 +224,10 @@ namespace EduConnect_API.Services
             if (filtro.Calificacion.HasValue && (filtro.Calificacion < 1 || filtro.Calificacion > 5))
                 throw new ArgumentException("La calificación debe estar entre 1 y 5.");
 
+            // Validar orden de fecha si se proporciona
+            if (filtro.OrdenFecha.HasValue && (filtro.OrdenFecha < 1 || filtro.OrdenFecha > 2))
+                throw new ArgumentException("El orden de fecha debe ser 1 (más recientes) o 2 (más antiguos).");
+
             return await _tutorRepository.ObtenerComentariosTutor(filtro);
         }
         public async Task<ObtenerUsuarioDto> ObtenerTutorPorIdAsync(int idTutorado)
