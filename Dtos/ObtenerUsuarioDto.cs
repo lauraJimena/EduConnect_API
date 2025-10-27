@@ -32,6 +32,7 @@ namespace EduConnect_API.Dtos
         public string Rol { get; set; } = string.Empty;
         public string Estado { get; set; } = string.Empty;
 
+        public string ContrasenaHash { get; set; } = string.Empty;
         public int IdRol { get; set; }
         public int IdEstado { get; set; }
         public int IdTipoIdent { get; set; }

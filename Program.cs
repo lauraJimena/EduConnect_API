@@ -13,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 var bindJwtSettings = new JwtSettingsDto();
 builder.Configuration.Bind("JsonWebTokenKeys", bindJwtSettings);
 builder.Services.AddSingleton(bindJwtSettings);
+builder.Services.AddSingleton<BcryptHasherUtility>();
 
 builder.Services.AddAuthentication(options =>
 {

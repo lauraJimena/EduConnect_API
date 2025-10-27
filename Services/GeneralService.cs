@@ -4,6 +4,7 @@ using EduConnect_API.Repositories;
 using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Services.Interfaces;
 using EduConnect_API.Utilities;
+using Org.BouncyCastle.Crypto.Generators;
 using System.Text.RegularExpressions;
 
 namespace EduConnect_API.Services
@@ -12,11 +13,13 @@ namespace EduConnect_API.Services
     {
         private readonly IGeneralRepository _generalRepository;
         private readonly JwtSettingsDto _jwtSettings;
+        private readonly BcryptHasherUtility _hasher;
 
-        public GeneralService(IGeneralRepository generalRepository, JwtSettingsDto jwtSettings)
+        public GeneralService(IGeneralRepository generalRepository, JwtSettingsDto jwtSettings, BcryptHasherUtility hasher)
         {
             _generalRepository = generalRepository;
             _jwtSettings = jwtSettings;
+            _hasher = hasher;
         }
         public async Task RegistrarUsuario(CrearUsuarioDto usuario)
         {
@@ -56,6 +59,9 @@ namespace EduConnect_API.Services
                 throw new Exception("La contraseña es obligatoria.");
             else if (!Regex.IsMatch(usuario.ContrasUsu, @"^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{7,}$"))
                 throw new Exception("La contraseña debe tener al menos 7 caracteres, incluir una mayúscula, un número y un carácter especial.");
+
+            // Hashear la contraseña antes de guardarla
+            usuario.ContrasUsu = _hasher.Hash(usuario.ContrasUsu);
 
             // Validaciones de llaves foráneas
             if (usuario.IdCarrera <= 0)
@@ -101,7 +107,11 @@ namespace EduConnect_API.Services
 
             if (result.IdEstado != 1) //  1 = activo
                 throw new Exception("El usuario no está activo");
-          
+
+            var ok = _hasher.Verify(usuario.ContrasUsu, result.ContrasenaHash);
+            if (!ok)
+                throw new Exception("Número de identificación o contraseña incorrectos.");
+
             respuesta.IdUsuario = result.IdUsu; // Agregar el ID antes de crear el token
             respuesta.IdRol = result.IdRol;
             respuesta = JwtUtility.GenTokenkey(respuesta, _jwtSettings);
