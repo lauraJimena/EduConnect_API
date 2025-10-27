@@ -619,23 +619,39 @@ SELECT
     CONCAT(u.nom_usu, ' ', u.apel_usu) AS Usuario,
     c.texto AS Descripcion,
     c.fecha AS Fecha,
+    CONVERT(VARCHAR(5), c.fecha, 108) AS Hora,
     c.calificacion AS Calificacion
 FROM [EduConnect].[dbo].[comentario] c
 INNER JOIN [EduConnect].[dbo].[usuario] u ON c.id_tutorado = u.id_usu
 WHERE c.id_tutor = @IdTutor";
 
-            // Aplicar filtros si existen
-            if (filtro.Fecha.HasValue)
-            {
-                sql += " AND CAST(c.fecha AS DATE) = @Fecha";
-            }
-
+            // Aplicar filtro por calificación si existe
             if (filtro.Calificacion.HasValue)
             {
                 sql += " AND c.calificacion = @Calificacion";
             }
 
-            sql += " ORDER BY c.fecha DESC";
+            // Aplicar ordenamiento por fecha
+            if (filtro.OrdenFecha.HasValue)
+            {
+                switch (filtro.OrdenFecha.Value)
+                {
+                    case 1: // Más recientes primero
+                        sql += " ORDER BY c.fecha DESC";
+                        break;
+                    case 2: // Más antiguos primero
+                        sql += " ORDER BY c.fecha ASC";
+                        break;
+                    default: // Por defecto: más recientes primero
+                        sql += " ORDER BY c.fecha DESC";
+                        break;
+                }
+            }
+            else
+            {
+                // Orden por defecto: más recientes primero
+                sql += " ORDER BY c.fecha DESC";
+            }
 
             var lista = new List<ComentarioTutorDto>();
 
@@ -643,11 +659,6 @@ WHERE c.id_tutor = @IdTutor";
             using var command = new SqlCommand(sql, connection);
 
             command.Parameters.AddWithValue("@IdTutor", filtro.IdTutor);
-
-            if (filtro.Fecha.HasValue)
-            {
-                command.Parameters.AddWithValue("@Fecha", filtro.Fecha.Value.Date);
-            }
 
             if (filtro.Calificacion.HasValue)
             {
@@ -657,7 +668,6 @@ WHERE c.id_tutor = @IdTutor";
             using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                var calificacion = Convert.ToInt32(reader["Calificacion"]);
                 var fecha = reader.GetDateTime(reader.GetOrdinal("Fecha"));
 
                 var dto = new ComentarioTutorDto
@@ -667,8 +677,7 @@ WHERE c.id_tutor = @IdTutor";
                     Descripcion = reader.GetString(reader.GetOrdinal("Descripcion")),
                     Fecha = fecha,
                     FechaFormateada = fecha.ToString("dd/MM/yyyy HH:mm"),
-                    Calificacion = calificacion,
-
+                    Calificacion = Convert.ToInt32(reader["Calificacion"])
                 };
                 lista.Add(dto);
             }
@@ -676,8 +685,8 @@ WHERE c.id_tutor = @IdTutor";
             return lista;
         }
 
-    
-    public async Task<PerfilTutorDto> ObtenerPerfilTutorAsync(int idTutor)
+
+        public async Task<PerfilTutorDto> ObtenerPerfilTutorAsync(int idTutor)
         {
             const string sql = @"
 SELECT 
