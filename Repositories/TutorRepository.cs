@@ -164,23 +164,24 @@ WHERE id_usu = @id_usu";
         public async Task<IEnumerable<SolicitudTutorDto>> ObtenerSolicitudesTutor(FiltroSolicitudesTutorDto filtro)
         {
             var sql = @"
-        SELECT 
-            t.id_tutoria AS IdTutoria,
-            CONCAT(u.nom_usu, ' ', u.apel_usu) AS NombreTutorado,
-            m.nom_materia AS Materia,
-            t.fecha AS Fecha,
-            CONVERT(VARCHAR(5), t.hora, 108) AS Hora,
-            t.tema AS Tema,
-            t.id_estado AS IdEstado,
-            e.nom_estado AS Estado,
-            mo.nom_modalidad AS Modalidad,
-            mo.id_modalidad AS IdModalidad
-        FROM [EduConnect].[dbo].[tutoria] t
-        INNER JOIN [EduConnect].[dbo].[usuario] u ON t.id_tutorado = u.id_usu
-        INNER JOIN [EduConnect].[dbo].[materia] m ON t.id_materia = m.id_materia
-        INNER JOIN [EduConnect].[dbo].[estado] e ON t.id_estado = e.id_estado
-        INNER JOIN [EduConnect].[dbo].[modalidad] mo ON t.id_modalidad = mo.id_modalidad
-        WHERE t.id_tutor = @IdTutor AND t.id_estado = 4"; // SOLO solicitudes pendientes
+         SELECT 
+     t.id_tutoria AS IdTutoria,
+     CONCAT(u.nom_usu, ' ', u.apel_usu) AS NombreTutorado,
+     m.nom_materia AS Materia,
+     t.fecha AS Fecha,
+     CONVERT(VARCHAR(5), t.hora, 108) AS Hora,
+     t.tema AS Tema,
+	 t.comentario_adic AS Comentario,
+     t.id_estado AS IdEstado,
+     e.nom_estado AS Estado,
+     mo.nom_modalidad AS Modalidad,
+     mo.id_modalidad AS IdModalidad
+ FROM [EduConnect].[dbo].[tutoria] t
+ INNER JOIN [EduConnect].[dbo].[usuario] u ON t.id_tutorado = u.id_usu
+ INNER JOIN [EduConnect].[dbo].[materia] m ON t.id_materia = m.id_materia
+ INNER JOIN [EduConnect].[dbo].[estado] e ON t.id_estado = e.id_estado
+ INNER JOIN [EduConnect].[dbo].[modalidad] mo ON t.id_modalidad = mo.id_modalidad
+ WHERE t.id_tutor = @IdTutor AND t.id_estado = 4"; // SOLO solicitudes pendientes
 
             // ✅ Aplicar filtros solo si tienen valor real
             if (filtro.IdMateria.HasValue && filtro.IdMateria.Value > 0)
@@ -193,7 +194,7 @@ WHERE id_usu = @id_usu";
                 sql += " AND t.id_modalidad = @IdModalidad";
             }
 
-            sql += " ORDER BY t.fecha DESC, t.hora DESC";
+            sql += " ORDER BY t.id_tutoria DESC";
 
             var lista = new List<SolicitudTutorDto>();
 
@@ -225,6 +226,7 @@ WHERE id_usu = @id_usu";
                     Fecha = reader.GetDateTime(reader.GetOrdinal("Fecha")),
                     Hora = reader.GetString(reader.GetOrdinal("Hora")),
                     Tema = reader.GetString(reader.GetOrdinal("Tema")),
+                    Comentario = reader.GetString(reader.GetOrdinal("Comentario")),
                     IdEstado = Convert.ToInt32(reader["IdEstado"]),
                     Estado = reader.GetString(reader.GetOrdinal("Estado")),
                     // Si quieres mostrar la modalidad en el front
