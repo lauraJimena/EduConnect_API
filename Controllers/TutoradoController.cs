@@ -147,41 +147,66 @@ namespace EduConnect_API.Controllers
                         FechaCreacion = DateTime.Now
                     });
 
-                    // ✅ Devolver el ID al frontend si lo necesitas para navegación
-                    return Ok(new { mensaje = "Solicitud de tutoría creada con éxito. ", idTutoria });
+                    // ✅ Devolver respuesta exitosa
+                    return Ok(new
+                    {
+                        mensaje = "Solicitud de tutoría creada con éxito.",
+                        idTutoria
+                    });
                 }
                 else
                 {
-                    return BadRequest("No se pudo crear la solicitud de tutoría");
+                    return BadRequest(new { mensaje = "No se pudo crear la solicitud de tutoría." });
                 }
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(ex.Message);
+                // ⚠️ Errores de validaciones lógicas o del trigger (RAISERROR)
+                return BadRequest(new { mensaje = ex.Message });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "Error interno: " + ex.Message);
+                // ⚙️ Solo agregar “Error interno” si el mensaje no viene del trigger
+                string mensaje = ex.Message;
+                if (!mensaje.StartsWith("❌"))
+                    mensaje = "Error interno: " + mensaje;
+
+                return StatusCode(500, new { mensaje });
             }
         }
+
         [HttpPost("CrearComentario")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<IActionResult> CrearComentario([FromBody] CrearComentarioDto dto)
+        [HttpPost("Comentario")]
+        public async Task<IActionResult> CrearComentario(CrearComentarioDto comentario)
         {
             try
             {
-                var mensaje = await _tutoradoService.CrearComentarioAsync(dto);
-                return Ok(new { mensaje });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
+                int idComentario = await _tutoradoService.CrearComentarioAsync(comentario);
+                return Ok(new { idComentario, mensaje = "Comentario creado correctamente."});
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = "Error interno: " + ex.Message });
+                return BadRequest(new { mensaje = ex.Message });
             }
         }
+
+        //public async Task<IActionResult> CrearComentario([FromBody] CrearComentarioDto dto)
+        //{
+        //    try
+        //    {
+        //        var mensaje = await _tutoradoService.CrearComentarioAsync(dto);
+        //        return Ok(new { mensaje });
+        //    }
+        //    catch (ArgumentException ex)
+        //    {
+        //        return BadRequest(new { error = ex.Message });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { error = "Error interno: " + ex.Message });
+        //    }
+        //}
 
         [HttpGet("RankingTutores")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -259,6 +284,23 @@ namespace EduConnect_API.Controllers
             try
             {
                 var resultado = await _tutoradoService.EnviarCorreoConfirmacionTutoriaAsync(idTutoria);
+
+                if (resultado)
+                    return Ok("✅ Correo enviado correctamente.");
+                else
+                    return BadRequest("❌ No se pudo enviar el correo.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error en el servidor: {ex.Message}");
+            }
+        }
+        [HttpPost("EnviarCalificacionBaja")]
+        public async Task<IActionResult> EnviarCalificacionBaja([FromQuery] int idComentario)
+        {
+            try
+            {
+                var resultado = await _tutoradoService.EnviarCorreoAdvertenciaCalificacionBajaAsync(idComentario);
 
                 if (resultado)
                     return Ok("✅ Correo enviado correctamente.");

@@ -79,23 +79,32 @@ builder.Services.AddSwaggerGen(options =>
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Version = "v1",
-        Title = "API_Software2 : " + builder.Configuration.GetValue<string>("Application:Environment"),
-        Description = "API con implementación de JWT",
+        Title = "API - Sistema de Tutorías Académicas UdeC - EDUCONNECT",
+        Description = "Esta API forma parte del sistema de tutorías académicas entre estudiantes de la Universidad de Cundinamarca. "
+                + "Proporciona servicios REST para la gestión de usuarios, tutorías, autenticación JWT y comunicación entre tutores y tutorados. "
+                + "\n\n**Características principales:**\n"
+                + "- Autenticación y autorización mediante JWT.\n"
+                + "- Gestión de usuarios (tutores, tutorados, coordinadores, administradores).\n"
+                + "- Registro y consulta de tutorías.\n"
+                + "- Chat interno y seguimiento del proceso académico.\n"
+                + "- Integración con base de datos SQL Server.\n\n",               
         Contact = new OpenApiContact
         {
-            Name = "API Desarrollada por GrupoGestionElectricidad de la Universidad de Cundinamarca",
+            Name = "Desarrollado por estudiantes de Ingeniería de Sistemas - Universidad de Cundinamarca",
             Url = new Uri("https://www.ucundinamarca.edu.co")
+          
         },
         License = new OpenApiLicense
         {
-            Name = "Repositorio",
-            Url = new Uri("https://github.com/AlanT218/backendConsumoE.git")
+            Name = "Repositorio del proyecto (GitHub)",
+            Url = new Uri("https://github.com/lauraJimena/EduConnect_API")
         }
     });
 
+
     //// Esta línea permite que Swagger lea los comentarios XML
-    //var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    //options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {

@@ -196,7 +196,111 @@ ORDER BY COUNT(*) DESC;
     }
 
     return (totales, listaTutores);
-}
+    }
+        public async Task<int> ActualizarEstadoComentario(int idComentario)
+        {
+            const string sql = @"
+            UPDATE [EduConnect].[dbo].[comentario]
+            SET id_estado = 2
+            WHERE id_comentario = @id_comentario";
+
+            try
+            {
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue("@id_comentario", idComentario);
+
+                return await command.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al actualizar el estado del comentario: " + ex.Message);
+            }
+        }
+        public async Task<IEnumerable<ListaComentariosDto>> ObtenerComentariosAsync(
+            string? carrera = null,
+            int? semestre = null,
+            string? materia = null,
+            List<int>? estados = null)
+        {
+            var lista = new List<ListaComentariosDto>();
+
+            // SQL base
+            var sql = @"
+SELECT 
+    c.id_comentario,
+    CONCAT(tu.nom_usu, ' ', tu.apel_usu) AS NombreTutorado,
+    CONCAT(tt.nom_usu, ' ', tt.apel_usu) AS NombreTutor,
+    tu.avatar AS AvatarTutorado,
+    c.texto,
+    c.calificacion,
+    c.fecha,
+    c.id_estado,
+    e.nom_estado
+FROM [EduConnect].[dbo].[comentario] AS c
+INNER JOIN [EduConnect].[dbo].[estado] AS e ON e.id_estado = c.id_estado
+INNER JOIN [EduConnect].[dbo].[usuario] AS tu ON tu.id_usu = c.id_tutorado
+INNER JOIN [EduConnect].[dbo].[usuario] AS tt ON tt.id_usu = c.id_tutor
+WHERE 1=1
+";
+
+            // 🔍 Filtros dinámicos
+            if (!string.IsNullOrWhiteSpace(carrera))
+                sql += " AND tu.carrera = @carrera";
+
+            if (semestre.HasValue)
+                sql += " AND tu.semestre = @semestre";
+
+            if (!string.IsNullOrWhiteSpace(materia))
+                sql += " AND c.materia LIKE '%' + @materia + '%'";
+
+            if (estados != null && estados.Count > 0)
+                sql += $" AND c.id_estado IN ({string.Join(",", estados)})";
+
+            sql += " ORDER BY c.id_comentario DESC;";
+
+            try
+            {
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql, connection);
+
+                if (!string.IsNullOrWhiteSpace(carrera))
+                    command.Parameters.AddWithValue("@carrera", carrera);
+
+                if (semestre.HasValue)
+                    command.Parameters.AddWithValue("@semestre", semestre);
+
+                if (!string.IsNullOrWhiteSpace(materia))
+                    command.Parameters.AddWithValue("@materia", materia);
+
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    lista.Add(new ListaComentariosDto
+                    {
+                        IdComentario = reader.GetInt32(reader.GetOrdinal("id_comentario")),
+                        Tutorado = reader.GetString(reader.GetOrdinal("NombreTutorado")),
+                        Tutor = reader.GetString(reader.GetOrdinal("NombreTutor")),
+                        AvatarTutorado = reader.GetString(reader.GetOrdinal("AvatarTutorado")),
+                        Texto = reader.GetString(reader.GetOrdinal("texto")),
+                        Calificacion = reader.GetByte(reader.GetOrdinal("calificacion")),
+                        Fecha = reader.GetDateTime(reader.GetOrdinal("fecha")),
+                        IdEstado = reader.GetByte(reader.GetOrdinal("id_estado")),
+                        NomEstado = reader.GetString(reader.GetOrdinal("nom_estado"))
+                    });
+                }
+
+                return lista;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al obtener los comentarios: " + ex.Message);
+            }
+        }
+
+
 
 
 

@@ -295,57 +295,59 @@ WHERE id_estado IN (1, 2, 3)";
 
             return lista;
         }
-        /*public async Task<int> CrearSolicitudTutoria(SolicitudTutoriaRequestDto solicitud)
-        {
-            const string sql = @"
-INSERT INTO [EduConnect].[dbo].[tutoria] 
-    (fecha, hora, id_modalidad, tema, comentario_adic, id_tutorado, id_tutor, id_materia, id_estado)
-VALUES 
-    (@fecha, @hora, @id_modalidad, @tema, @comentario_adic, @id_tutorado, @id_tutor, @id_materia, 4)"; // id_estado = 4 (Pendiente)
 
-            try
-            {
-                // Convertir string a TimeSpan
-                if (!TimeSpan.TryParse(solicitud.Hora, out TimeSpan horaTimeSpan))
-                {
-                    throw new ArgumentException("Formato de hora inválido");
-                }
 
-                using var connection = _dbContextUtility.GetOpenConnection();
-                using var command = new SqlCommand(sql, connection);
+        //        public async Task<int> CrearSolicitudTutoria(SolicitudTutoriaRequestDto solicitud)
+        //        {
+        //            const string sql = @"
+        //INSERT INTO [EduConnect].[dbo].[tutoria] 
+        //    (fecha, hora, id_modalidad, tema, comentario_adic, id_tutorado, id_tutor, id_materia, id_estado)
+        //OUTPUT INSERTED.id_tutoria
+        //VALUES 
+        //    (@fecha, @hora, @id_modalidad, @tema, @comentario_adic, @id_tutorado, @id_tutor, @id_materia, 4);"; // id_estado = 4 (Pendiente)
 
-                command.Parameters.AddWithValue("@fecha", solicitud.Fecha);
-                command.Parameters.AddWithValue("@hora", horaTimeSpan);
-                command.Parameters.AddWithValue("@id_modalidad", solicitud.IdModalidad);
-                command.Parameters.AddWithValue("@tema", solicitud.Tema);
-                command.Parameters.AddWithValue("@comentario_adic", (object)solicitud.ComentarioAdicional ?? DBNull.Value);
-                command.Parameters.AddWithValue("@id_tutorado", solicitud.IdTutorado);
-                command.Parameters.AddWithValue("@id_tutor", solicitud.IdTutor);
-                command.Parameters.AddWithValue("@id_materia", solicitud.IdMateria);
+        //            try
+        //            {
+        //                if (!TimeSpan.TryParse(solicitud.Hora, out TimeSpan horaTimeSpan))
+        //                {
+        //                    throw new ArgumentException("Formato de hora inválido");
+        //                }
 
-                return await command.ExecuteNonQueryAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error al crear la solicitud de tutoría: " + ex.Message);
-            }
-        }*/
+        //                using var connection = _dbContextUtility.GetOpenConnection();
+        //                using var command = new SqlCommand(sql, connection);
 
+        //                command.Parameters.AddWithValue("@fecha", solicitud.Fecha);
+        //                command.Parameters.AddWithValue("@hora", horaTimeSpan);
+        //                command.Parameters.AddWithValue("@id_modalidad", solicitud.IdModalidad);
+        //                command.Parameters.AddWithValue("@tema", solicitud.Tema);
+        //                command.Parameters.AddWithValue("@comentario_adic", (object)solicitud.ComentarioAdicional ?? DBNull.Value);
+        //                command.Parameters.AddWithValue("@id_tutorado", solicitud.IdTutorado);
+        //                command.Parameters.AddWithValue("@id_tutor", solicitud.IdTutor);
+        //                command.Parameters.AddWithValue("@id_materia", solicitud.IdMateria);
+
+        //                // Aquí recibes el ID generado automáticamente
+        //                var idGenerado = await command.ExecuteScalarAsync();
+
+        //                return Convert.ToInt32(idGenerado);
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                throw new Exception("Error al enviar la solicitud: " + ex.Message);
+        //            }
+        //        }
         public async Task<int> CrearSolicitudTutoria(SolicitudTutoriaRequestDto solicitud)
         {
             const string sql = @"
-INSERT INTO [EduConnect].[dbo].[tutoria] 
-    (fecha, hora, id_modalidad, tema, comentario_adic, id_tutorado, id_tutor, id_materia, id_estado)
-OUTPUT INSERTED.id_tutoria
-VALUES 
-    (@fecha, @hora, @id_modalidad, @tema, @comentario_adic, @id_tutorado, @id_tutor, @id_materia, 4);"; // id_estado = 4 (Pendiente)
+        INSERT INTO [EduConnect].[dbo].[tutoria]
+        (fecha, hora, id_modalidad, tema, comentario_adic, id_tutorado, id_tutor, id_materia, id_estado)
+        VALUES 
+        (@fecha, @hora, @id_modalidad, @tema, @comentario_adic, @id_tutorado, @id_tutor, @id_materia, 4);";
+            // id_estado = 4 (Pendiente)
 
             try
             {
                 if (!TimeSpan.TryParse(solicitud.Hora, out TimeSpan horaTimeSpan))
-                {
-                    throw new ArgumentException("Formato de hora inválido");
-                }
+                    throw new ArgumentException("Formato de hora inválido.");
 
                 using var connection = _dbContextUtility.GetOpenConnection();
                 using var command = new SqlCommand(sql, connection);
@@ -359,16 +361,25 @@ VALUES
                 command.Parameters.AddWithValue("@id_tutor", solicitud.IdTutor);
                 command.Parameters.AddWithValue("@id_materia", solicitud.IdMateria);
 
-                // Aquí recibes el ID generado automáticamente
-                var idGenerado = await command.ExecuteScalarAsync();
+                // No se usa OUTPUT -> usamos ExecuteNonQueryAsync
+                var filasAfectadas = await command.ExecuteNonQueryAsync();
 
-                return Convert.ToInt32(idGenerado);
+                return filasAfectadas;
+            }
+            catch (SqlException ex)
+            {
+                // Limpia el mensaje del trigger (quita la parte de “The transaction ended…”)
+                string mensaje = ex.Message.Split("The transaction ended")[0].Trim();
+
+                // Si el trigger lanza un RAISERROR, este texto será el primero y correcto
+                throw new Exception(mensaje);
             }
             catch (Exception ex)
             {
-                throw new Exception("Error al crear la solicitud de tutoría: " + ex.Message);
+                throw new Exception("Error al enviar la solicitud: " + ex.Message);
             }
         }
+
 
         public async Task<bool> ExisteTutor(int idTutor)
         {
@@ -399,13 +410,14 @@ VALUES
             var result = await command.ExecuteScalarAsync();
             return Convert.ToInt32(result) > 0;
         }
-        public async Task CrearComentarioAsync(CrearComentarioDto comentario)
+        public async Task<int> CrearComentarioAsync(CrearComentarioDto comentario)
         {
             const string sql = @"
-            INSERT INTO [EduConnect].[dbo].[comentario] 
-                (texto, calificacion, fecha, id_tutor, id_tutorado, id_estado)
-            VALUES 
-                (@texto, @calificacion, GETDATE(), @id_tutor, @id_tutorado, @id_estado);";
+        INSERT INTO [EduConnect].[dbo].[comentario] 
+            (texto, calificacion, fecha, id_tutor, id_tutorado, id_estado)
+        OUTPUT INSERTED.id_comentario
+        VALUES 
+            (@texto, @calificacion, GETDATE(), @id_tutor, @id_tutorado, @id_estado);";
 
             try
             {
@@ -418,7 +430,9 @@ VALUES
                 command.Parameters.AddWithValue("@id_tutorado", comentario.IdTutorado);
                 command.Parameters.AddWithValue("@id_estado", comentario.IdEstado);
 
-                await command.ExecuteNonQueryAsync(); // ✅ Solo ejecuta el insert, sin devolver nada
+                // 🔹 Ejecutar y devolver el ID generado
+                var idGenerado = await command.ExecuteScalarAsync();
+                return Convert.ToInt32(idGenerado);
             }
             catch (Exception ex)
             {
@@ -426,115 +440,74 @@ VALUES
             }
         }
 
-        //        public async Task<ComentarioResponseDto> CrearComentario(CrearComentarioDto comentario)
+
+        //        public async Task<IEnumerable<RankingTutorDto>> ObtenerRankingTutores()
         //        {
+        //            // Consulta CORREGIDA usando id_usu en tutor_materia
         //            const string sql = @"
-        //INSERT INTO [EduConnect].[dbo].[comentario] 
-        //    (texto, calificacion, fecha, id_tutor, id_tutorado, id_estado)
-        //OUTPUT INSERTED.id_comentario, INSERTED.texto, INSERTED.calificacion, INSERTED.fecha, 
-        //       INSERTED.id_tutor, INSERTED.id_tutorado, INSERTED.id_estado
-        //VALUES 
-        //    (@texto, @calificacion, GETDATE(), @id_tutor, @id_tutorado, @id_estado)"; // id_estado = 1 (Activo)
+        //SELECT TOP (3)
+        //    CONCAT(u.nom_usu, ' ', u.apel_usu) AS NombreTutor,
+        //    c.nom_carrera AS Carrera,
+        //    s.num_semestre AS Semestre,
+        //    u.id_usu AS IdUsu,
+        //    u.id_rol,
+        //    u.avatar AS Avatar,     
+        //    ISNULL((
+        //        SELECT TOP 1 tm.id_materia
+        //        FROM [EduConnect].[dbo].[tutor_materia] tm
+        //        WHERE tm.id_usu = u.id_usu
+        //        ORDER BY tm.id_materia
+        //    ), NULL) AS IdMateria,
+        //    ISNULL((
+        //        SELECT STRING_AGG(m.nom_materia, ', ')
+        //        FROM [EduConnect].[dbo].[tutor_materia] tm
+        //        INNER JOIN [EduConnect].[dbo].[materia] m 
+        //            ON tm.id_materia = m.id_materia
+        //        WHERE tm.id_usu = u.id_usu
+        //    ), 'Sin materias registradas') AS Materias,
+        //    ISNULL((
+        //        SELECT AVG(CAST(calificacion AS FLOAT))
+        //        FROM [EduConnect].[dbo].[comentario] c
+        //        WHERE c.id_tutor = u.id_usu
+        //          AND u.id_estado = 1
+        //    ), 0) AS PromedioCalificacion
+        //FROM [EduConnect].[dbo].[usuario] u
+        //INNER JOIN [EduConnect].[dbo].[carrera] c ON u.id_carrera = c.id_carrera
+        //INNER JOIN [EduConnect].[dbo].[semestre] s ON u.id_semestre = s.id_semestre
+        //WHERE u.id_rol = 2
+        //  AND u.id_estado = 1
+        //ORDER BY PromedioCalificacion DESC;
+        //";
 
-        //            const string sqlDatos = @"
-        //SELECT 
-        //    c.id_comentario,
-        //    c.texto,
-        //    c.calificacion,
-        //    c.fecha,
-        //    c.id_tutor,
-        //    c.id_tutorado,
-        //    c.id_estado,
-        //    CONCAT(tutor.nom_usu, ' ', tutor.apel_usu) AS NombreTutor,
-        //    CONCAT(tutorado.nom_usu, ' ', tutorado.apel_usu) AS NombreTutorado
-        //FROM [EduConnect].[dbo].[comentario] c
-        //INNER JOIN [EduConnect].[dbo].[usuario] tutor ON c.id_tutor = tutor.id_usu
-        //INNER JOIN [EduConnect].[dbo].[usuario] tutorado ON c.id_tutorado = tutorado.id_usu
-        //WHERE c.id_comentario = @id_comentario";
+        //            var lista = new List<RankingTutorDto>();
 
-        //            try
+        //            using var connection = _dbContextUtility.GetOpenConnection();
+        //            using var command = new SqlCommand(sql, connection);
+
+        //            using var reader = await command.ExecuteReaderAsync();
+        //            while (await reader.ReadAsync())
         //            {
-        //                using var connection = _dbContextUtility.GetOpenConnection();
-
-        //                // Insertar el comentario
-        //                int idComentario;
-        //                using (var command = new SqlCommand(sql, connection))
+        //                var dto = new RankingTutorDto
         //                {
-        //                    command.Parameters.AddWithValue("@texto", comentario.Texto);
-        //                    command.Parameters.AddWithValue("@calificacion", comentario.Calificacion);
-        //                    command.Parameters.AddWithValue("@id_tutor", comentario.IdTutor);
-        //                    command.Parameters.AddWithValue("@id_tutorado", comentario.IdTutorado);
-        //                    command.Parameters.AddWithValue("@id_estado", comentario.IdEstado);
-        //                    idComentario = Convert.ToInt32(await command.ExecuteScalarAsync());
-        //                }
-
-        //                // Obtener los datos completos del comentario creado
-        //                using var commandDatos = new SqlCommand(sqlDatos, connection);
-        //                commandDatos.Parameters.AddWithValue("@id_comentario", idComentario);
-
-        //                using var reader = await commandDatos.ExecuteReaderAsync();
-        //                if (await reader.ReadAsync())
-        //                {
-        //                    return new ComentarioResponseDto
-        //                    {
-        //                        IdComentario = reader.GetInt32(reader.GetOrdinal("id_comentario")),
-        //                        Texto = reader.GetString(reader.GetOrdinal("texto")),
-        //                        Calificacion = Convert.ToInt32(reader["calificacion"]),
-        //                        Fecha = reader.GetDateTime(reader.GetOrdinal("fecha")),
-        //                        IdTutor = reader.GetInt32(reader.GetOrdinal("id_tutor")),
-        //                        IdTutorado = reader.GetInt32(reader.GetOrdinal("id_tutorado")),
-        //                        IdEstado = Convert.ToInt32(reader["id_estado"]),
-        //                        NombreTutor = reader.GetString(reader.GetOrdinal("NombreTutor")),
-        //                        NombreTutorado = reader.GetString(reader.GetOrdinal("NombreTutorado"))
-        //                    };
-        //                }
-
-        //                throw new Exception("Error al recuperar el comentario creado");
+        //                    IdUsu= reader.GetInt32(reader.GetOrdinal("IdUsu")),
+        //                    IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria")),
+        //                    NombreTutor = reader.GetString(reader.GetOrdinal("NombreTutor")),
+        //                    Carrera = reader.GetString(reader.GetOrdinal("Carrera")),
+        //                    Semestre = Convert.ToString(reader["Semestre"]),
+        //                    Materias = reader.GetString(reader.GetOrdinal("Materias")),
+        //                    PromedioCalificacion = Convert.ToDouble(reader["PromedioCalificacion"]),
+        //                    Avatar = reader.IsDBNull(reader.GetOrdinal("Avatar"))
+        //                     ? null
+        //                     : reader.GetString(reader.GetOrdinal("Avatar")) // ✅ ahora lo obtenemos
+        //                };
+        //                lista.Add(dto);
         //            }
-        //            catch (Exception ex)
-        //            {
-        //                throw new Exception("Error al crear el comentario: " + ex.Message);
-        //            }
+
+        //            return lista;
         //        }
-
         public async Task<IEnumerable<RankingTutorDto>> ObtenerRankingTutores()
         {
-            // Consulta CORREGIDA usando id_usu en tutor_materia
-            const string sql = @"
-SELECT TOP (3)
-    CONCAT(u.nom_usu, ' ', u.apel_usu) AS NombreTutor,
-    c.nom_carrera AS Carrera,
-    s.num_semestre AS Semestre,
-    u.id_usu AS IdUsu,
-    u.id_rol,
-    u.avatar AS Avatar,     
-    ISNULL((
-        SELECT TOP 1 tm.id_materia
-        FROM [EduConnect].[dbo].[tutor_materia] tm
-        WHERE tm.id_usu = u.id_usu
-        ORDER BY tm.id_materia
-    ), NULL) AS IdMateria,
-    ISNULL((
-        SELECT STRING_AGG(m.nom_materia, ', ')
-        FROM [EduConnect].[dbo].[tutor_materia] tm
-        INNER JOIN [EduConnect].[dbo].[materia] m 
-            ON tm.id_materia = m.id_materia
-        WHERE tm.id_usu = u.id_usu
-    ), 'Sin materias registradas') AS Materias,
-    ISNULL((
-        SELECT AVG(CAST(calificacion AS FLOAT))
-        FROM [EduConnect].[dbo].[comentario] c
-        WHERE c.id_tutor = u.id_usu
-          AND u.id_estado = 1
-    ), 0) AS PromedioCalificacion
-FROM [EduConnect].[dbo].[usuario] u
-INNER JOIN [EduConnect].[dbo].[carrera] c ON u.id_carrera = c.id_carrera
-INNER JOIN [EduConnect].[dbo].[semestre] s ON u.id_semestre = s.id_semestre
-WHERE u.id_rol = 2
-  AND u.id_estado = 1
-ORDER BY PromedioCalificacion DESC;
-";
-
+            const string sql = "EXEC [dbo].[sp_ObtenerRankingTutores]";
             var lista = new List<RankingTutorDto>();
 
             using var connection = _dbContextUtility.GetOpenConnection();
@@ -545,22 +518,22 @@ ORDER BY PromedioCalificacion DESC;
             {
                 var dto = new RankingTutorDto
                 {
-                    IdUsu= reader.GetInt32(reader.GetOrdinal("IdUsu")),
-                    IdMateria = reader.GetInt32(reader.GetOrdinal("IdMateria")),
+                    IdUsu = reader.GetInt32(reader.GetOrdinal("IdUsu")),
+                    IdMateria = reader.IsDBNull(reader.GetOrdinal("IdMateria")) ? 0 : reader.GetInt32(reader.GetOrdinal("IdMateria")),
                     NombreTutor = reader.GetString(reader.GetOrdinal("NombreTutor")),
                     Carrera = reader.GetString(reader.GetOrdinal("Carrera")),
                     Semestre = Convert.ToString(reader["Semestre"]),
                     Materias = reader.GetString(reader.GetOrdinal("Materias")),
                     PromedioCalificacion = Convert.ToDouble(reader["PromedioCalificacion"]),
-                    Avatar = reader.IsDBNull(reader.GetOrdinal("Avatar"))
-                     ? null
-                     : reader.GetString(reader.GetOrdinal("Avatar")) // ✅ ahora lo obtenemos
+                    Avatar = reader.IsDBNull(reader.GetOrdinal("Avatar")) ? null : reader.GetString(reader.GetOrdinal("Avatar"))
                 };
+
                 lista.Add(dto);
             }
 
             return lista;
         }
+
         public async Task<IEnumerable<ComentarioTutorInfoDto>> ObtenerComentariosPorTutor(int idTutor)
         {
             const string sql = @"
@@ -572,7 +545,7 @@ SELECT
 FROM [EduConnect].[dbo].[comentario] c
 INNER JOIN [EduConnect].[dbo].[usuario] u ON c.id_tutorado = u.id_usu
 WHERE c.id_tutor = @idTutor
-    AND u.id_estado = 1 
+    AND u.id_estado = 1 AND c.id_estado = 1
 ORDER BY c.fecha DESC";
 
             var lista = new List<ComentarioTutorInfoDto>();
@@ -734,6 +707,50 @@ WHERE u.id_usu = @idUsu;";
 
             return null;
         }
+        public async Task<ComentarioAdvertenciaDto> ObtenerDatosComentarioAsync(int idComentario)
+        {
+            const string sql = @"
+        SELECT 
+            c.id_comentario,
+            c.texto,
+            c.calificacion,
+            CONCAT(tu.nom_usu, ' ', tu.apel_usu) AS NombreTutorado,
+            CONCAT(tt.nom_usu, ' ', tt.apel_usu) AS NombreTutor,
+            tt.correo_usu AS CorreoTutor
+        FROM [EduConnect].[dbo].[comentario] AS c
+        INNER JOIN [EduConnect].[dbo].[usuario] AS tu ON tu.id_usu = c.id_tutorado
+        INNER JOIN [EduConnect].[dbo].[usuario] AS tt ON tt.id_usu = c.id_tutor
+        WHERE c.id_comentario = @id_comentario;";
+
+            try
+            {
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@id_comentario", idComentario);
+
+                using var reader = await command.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    return new ComentarioAdvertenciaDto
+                    {
+                        IdComentario = reader.GetInt32(0),
+                        Texto = reader.GetString(1),
+                        Calificacion = reader.GetByte(2),
+                        NombreTutorado = reader.GetString(3),
+                        NombreTutor = reader.GetString(4),
+                        CorreoTutor = reader.GetString(5)
+                    };
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al obtener datos del comentario: " + ex.Message);
+            }
+        }
+
+
     }
 
 }

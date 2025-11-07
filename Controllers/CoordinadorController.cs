@@ -9,7 +9,7 @@ namespace EduConnect_API.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class CoordinadorController: ControllerBase
+    public class CoordinadorController : ControllerBase
     {
         private readonly ILogger<CoordinadorController> _logger;
         private readonly ICoordinadorService _coordinadorService;
@@ -81,8 +81,48 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, $"Error al generar el reporte combinado: {ex.Message}");
             }
         }
+        /// <summary>
+        /// Obtiene todos los comentarios (activos e inactivos)
+        /// </summary>
+        [HttpGet("Comentarios")]
+        public async Task<IActionResult> ObtenerComentarios()
+        {
+            try
+            {
+                var comentarios = await _coordinadorService.ObtenerComentariosAsync();
+                return Ok(comentarios);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Error al obtener los comentarios: " + ex.Message });
+            }
+        }
+        /// <summary>
+        /// Cambia el estado de un comentario a inactivo (id_estado = 2)
+        /// </summary>
+        [HttpPut("InactivarComentario/{idComentario}")]
+        public async Task<IActionResult> ActualizarEstadoComentario(int idComentario)
+        {
+            try
+            {
+                int resultado = await _coordinadorService.ActualizarEstadoComentario(idComentario);
+
+                if (resultado > 0)
+                    return Ok(new { mensaje = "Estado del comentario actualizado correctamente." });
+                else
+                    return NotFound(new { mensaje = "Comentario no encontrado o no actualizado." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { mensaje = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Error interno: " + ex.Message });
+            }
 
 
 
         }
+    }
 }

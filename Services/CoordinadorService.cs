@@ -28,6 +28,30 @@ namespace EduConnect_API.Services
         {
             return await _coordinadorRepository.ObtenerReporteCombinadoAsync();
         }
+        public async Task<int> ActualizarEstadoComentario(int idComentario)
+        {        
+
+            // Actualizar el estado (1 = activo, 2 = inactivo)
+            int resultado = await _coordinadorRepository.ActualizarEstadoComentario(idComentario);
+
+            if (resultado <= 0)
+                throw new Exception("No se pudo actualizar el estado del comentario.");
+
+            return resultado;
+        }
+ 
+        //public async Task<IEnumerable<ListaComentariosDto>> ObtenerComentarios()
+        //{
+        //    return await _coordinadorRepository.ObtenerComentariosAsync();
+        //}
+        public async Task<IEnumerable<ListaComentariosDto>> ObtenerComentariosAsync(
+    string? carrera = null,
+    int? semestre = null,
+    string? materia = null,
+    List<int>? estados = null)
+        {
+            return await _coordinadorRepository.ObtenerComentariosAsync(carrera, semestre, materia, estados);
+        }
 
 
     }
