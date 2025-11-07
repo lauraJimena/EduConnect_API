@@ -81,7 +81,8 @@ namespace EduConnect_API.Repositories
         INNER JOIN tutoria t ON c.id_tutoria = t.id_tutoria
         INNER JOIN usuario u ON u.id_usu = t.id_tutor         -- Tutor
         INNER JOIN materia m ON m.id_materia = t.id_materia
-        WHERE t.id_tutorado = @idUsuario";
+        WHERE t.id_tutorado = @idUsuario
+        ORDER BY c.fecha_creacion DESC;";
             }
             else if (rolUsuario == "Tutor")
             {
@@ -96,7 +97,8 @@ namespace EduConnect_API.Repositories
         INNER JOIN tutoria t ON c.id_tutoria = t.id_tutoria
         INNER JOIN usuario u ON u.id_usu = t.id_tutorado      -- Tutorado
         INNER JOIN materia m ON m.id_materia = t.id_materia
-        WHERE t.id_tutor = @idUsuario";
+        WHERE t.id_tutor = @idUsuario
+  ORDER BY c.fecha_creacion DESC;";
             }
             else
             {

@@ -7,6 +7,7 @@ using EduConnect_API.Services.Interfaces;
 using EduConnect_API.Services.Interfaces;
 using EduConnect_API.Utilities;
 using MailKit.Security;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 using System.Net.Mail;
@@ -126,102 +127,160 @@ namespace EduConnect_API.Services
         {
             return await _tutoradoRepository.ObtenerEstadosSolicitud();
         }
+        //public async Task<int> CrearSolicitudTutoria(SolicitudTutoriaRequestDto solicitud)
+        //{
+        //    // Validaciones básicas
+        //    if (solicitud.IdTutorado <= 0)
+        //        throw new ArgumentException("El ID del tutorado es obligatorio.");
+
+        //    if (solicitud.IdTutor <= 0)
+        //        throw new ArgumentException("El ID del tutor es obligatorio.");
+
+        //    if (solicitud.IdMateria <= 0)
+        //        throw new ArgumentException("El ID de la materia es obligatorio.");
+
+        //    if (solicitud.IdModalidad <= 0)
+        //        throw new ArgumentException("El ID de la modalidad es obligatorio.");
+
+        //    // Validar que el tutorado existe y es tutorado
+        //    if (!await _tutoradoRepository.ExisteUsuario(solicitud.IdTutorado))
+        //        throw new ArgumentException("El tutorado no existe.");
+
+        //    int rolUsuario = await _tutoradoRepository.ObtenerRolUsuario(solicitud.IdTutorado);
+        //    if (rolUsuario != 1)
+        //        throw new ArgumentException("El usuario no tiene permisos de tutorado.");
+
+        //    // Validar que el tutor existe y es tutor
+        //    if (!await _tutoradoRepository.ExisteTutor(solicitud.IdTutor))
+        //        throw new ArgumentException("El tutor no existe o no tiene permisos de tutor.");
+
+        //    // Validar que la materia existe
+        //    if (!await _tutoradoRepository.ExisteMateria(solicitud.IdMateria))
+        //        throw new ArgumentException("La materia no existe.");
+
+        //    // Validar que la modalidad existe
+        //    if (!await _tutoradoRepository.ExisteModalidad(solicitud.IdModalidad))
+        //        throw new ArgumentException("La modalidad no existe.");
+
+        //    // Validar fecha (no puede ser en el pasado)
+        //    if (solicitud.Fecha < DateTime.Today)
+        //        throw new ArgumentException("La fecha no puede ser en el pasado.");
+
+        //    // Validar formato de hora
+        //    if (string.IsNullOrWhiteSpace(solicitud.Hora))
+        //        throw new ArgumentException("La hora es obligatoria.");
+
+        //    // Validar que la hora tenga formato correcto (HH:mm)
+        //    if (!TimeSpan.TryParse(solicitud.Hora, out TimeSpan hora))
+        //        throw new ArgumentException("El formato de la hora no es válido. Use formato HH:mm (ej: 14:30).");
+
+        //    // Validar tema (obligatorio)
+        //    if (string.IsNullOrWhiteSpace(solicitud.Tema))
+        //        throw new ArgumentException("El tema es obligatorio.");
+
+        //    if (solicitud.Tema.Length < 5)
+        //        throw new ArgumentException("El tema debe tener al menos 5 caracteres.");
+
+        //    // Validar comentario adicional (opcional pero si existe, validar longitud)
+        //    if (!string.IsNullOrWhiteSpace(solicitud.ComentarioAdicional) && solicitud.ComentarioAdicional.Length > 500)
+        //        throw new ArgumentException("El comentario adicional no puede exceder los 500 caracteres.");
+
+        //    return await _tutoradoRepository.CrearSolicitudTutoria(solicitud);
+        //}
         public async Task<int> CrearSolicitudTutoria(SolicitudTutoriaRequestDto solicitud)
         {
-            // Validaciones básicas
-            if (solicitud.IdTutorado <= 0)
-                throw new ArgumentException("El ID del tutorado es obligatorio.");
+            try
+            {
+                // ⚙️ Validaciones básicas (las de tu código original)
+                if (solicitud.IdTutorado <= 0)
+                    throw new ArgumentException("El ID del tutorado es obligatorio.");
 
-            if (solicitud.IdTutor <= 0)
-                throw new ArgumentException("El ID del tutor es obligatorio.");
+                if (solicitud.IdTutor <= 0)
+                    throw new ArgumentException("El ID del tutor es obligatorio.");
 
-            if (solicitud.IdMateria <= 0)
-                throw new ArgumentException("El ID de la materia es obligatorio.");
+                if (solicitud.IdMateria <= 0)
+                    throw new ArgumentException("El ID de la materia es obligatorio.");
 
-            if (solicitud.IdModalidad <= 0)
-                throw new ArgumentException("El ID de la modalidad es obligatorio.");
+                if (solicitud.IdModalidad <= 0)
+                    throw new ArgumentException("El ID de la modalidad es obligatorio.");
 
-            // Validar que el tutorado existe y es tutorado
-            if (!await _tutoradoRepository.ExisteUsuario(solicitud.IdTutorado))
-                throw new ArgumentException("El tutorado no existe.");
+                // Validar que el tutorado existe y es tutorado
+                if (!await _tutoradoRepository.ExisteUsuario(solicitud.IdTutorado))
+                    throw new ArgumentException("El tutorado no existe.");
 
-            int rolUsuario = await _tutoradoRepository.ObtenerRolUsuario(solicitud.IdTutorado);
-            if (rolUsuario != 1)
-                throw new ArgumentException("El usuario no tiene permisos de tutorado.");
+                int rolUsuario = await _tutoradoRepository.ObtenerRolUsuario(solicitud.IdTutorado);
+                if (rolUsuario != 1)
+                    throw new ArgumentException("El usuario no tiene permisos de tutorado.");
 
-            // Validar que el tutor existe y es tutor
-            if (!await _tutoradoRepository.ExisteTutor(solicitud.IdTutor))
-                throw new ArgumentException("El tutor no existe o no tiene permisos de tutor.");
+                // Validar que el tutor existe y es tutor
+                if (!await _tutoradoRepository.ExisteTutor(solicitud.IdTutor))
+                    throw new ArgumentException("El tutor no existe o no tiene permisos de tutor.");
 
-            // Validar que la materia existe
-            if (!await _tutoradoRepository.ExisteMateria(solicitud.IdMateria))
-                throw new ArgumentException("La materia no existe.");
+                if (!await _tutoradoRepository.ExisteModalidad(solicitud.IdModalidad))
+                    throw new ArgumentException("La modalidad no existe.");
 
-            // Validar que la modalidad existe
-            if (!await _tutoradoRepository.ExisteModalidad(solicitud.IdModalidad))
-                throw new ArgumentException("La modalidad no existe.");
+                // Validar fecha y hora
+                if (solicitud.Fecha < DateTime.Today)
+                    throw new ArgumentException("La fecha no puede ser en el pasado.");
 
-            // Validar fecha (no puede ser en el pasado)
-            if (solicitud.Fecha < DateTime.Today)
-                throw new ArgumentException("La fecha no puede ser en el pasado.");
+                if (string.IsNullOrWhiteSpace(solicitud.Hora))
+                    throw new ArgumentException("La hora es obligatoria.");
 
-            // Validar formato de hora
-            if (string.IsNullOrWhiteSpace(solicitud.Hora))
-                throw new ArgumentException("La hora es obligatoria.");
+                if (!TimeSpan.TryParse(solicitud.Hora, out TimeSpan hora))
+                    throw new ArgumentException("El formato de la hora no es válido. Use formato HH:mm (ej: 14:30).");
 
-            // Validar que la hora tenga formato correcto (HH:mm)
-            if (!TimeSpan.TryParse(solicitud.Hora, out TimeSpan hora))
-                throw new ArgumentException("El formato de la hora no es válido. Use formato HH:mm (ej: 14:30).");
+                // Validar tema
+                if (string.IsNullOrWhiteSpace(solicitud.Tema))
+                    throw new ArgumentException("El tema es obligatorio.");
 
-            // Validar tema (obligatorio)
-            if (string.IsNullOrWhiteSpace(solicitud.Tema))
-                throw new ArgumentException("El tema es obligatorio.");
+                if (solicitud.Tema.Length < 5)
+                    throw new ArgumentException("El tema debe tener al menos 5 caracteres.");
 
-            if (solicitud.Tema.Length < 5)
-                throw new ArgumentException("El tema debe tener al menos 5 caracteres.");
+                // Validar comentario adicional (si existe)
+                if (!string.IsNullOrWhiteSpace(solicitud.ComentarioAdicional) && solicitud.ComentarioAdicional.Length > 500)
+                    throw new ArgumentException("El comentario adicional no puede exceder los 500 caracteres.");
 
-            // Validar comentario adicional (opcional pero si existe, validar longitud)
-            if (!string.IsNullOrWhiteSpace(solicitud.ComentarioAdicional) && solicitud.ComentarioAdicional.Length > 500)
-                throw new ArgumentException("El comentario adicional no puede exceder los 500 caracteres.");
+                // ✅ Llamada al repository
+                return await _tutoradoRepository.CrearSolicitudTutoria(solicitud);
+            }
+            catch (SqlException ex)
+            {
+                // Captura el mensaje del trigger limpio
+                string mensaje = ex.Message.Split("The transaction ended")[0].Trim();
+                throw new ArgumentException(mensaje);
+            }
+            catch (Exception ex)
+            {
+                // 💡 Si el mensaje viene del trigger (empieza con ❌), no agregues prefijo
+                string mensaje = ex.Message;
+                if (mensaje.StartsWith("❌"))
+                    throw new ArgumentException(mensaje);
 
-            return await _tutoradoRepository.CrearSolicitudTutoria(solicitud);
+                throw new Exception("Error al crear la solicitud de tutoría: " + mensaje);
+            }
         }
-        public async Task<string> CrearComentarioAsync(CrearComentarioDto comentario)
+
+
+
+        public async Task<int> CrearComentarioAsync(CrearComentarioDto comentario)
         {
-
-            if (comentario.IdTutorado <= 0)
-                throw new ArgumentException("El ID del tutorado es obligatorio.");
-
-            if (comentario.IdTutor <= 0)
-                throw new ArgumentException("El ID del tutor es obligatorio.");
-
-            if (!await _tutoradoRepository.ExisteUsuario(comentario.IdTutorado))
-                throw new ArgumentException("El tutorado no existe.");
-
-            int rolTutorado = await _tutoradoRepository.ObtenerRolUsuario(comentario.IdTutorado);
-            if (rolTutorado != 1)
-                throw new ArgumentException("El usuario no tiene permisos de tutorado.");
-
-            if (!await _tutoradoRepository.ExisteTutor(comentario.IdTutor))
-                throw new ArgumentException("El tutor no existe o no tiene permisos de tutor.");
+            
+            if (comentario == null)
+                throw new ArgumentException("Los datos del comentario son obligatorios.");
 
             if (comentario.Calificacion < 1 || comentario.Calificacion > 5)
                 throw new ArgumentException("La calificación debe estar entre 1 y 5 estrellas.");
 
-            if (string.IsNullOrWhiteSpace(comentario.Texto))
-                throw new ArgumentException("El comentario es obligatorio.");
+            if (comentario.IdTutor <= 0 || comentario.IdTutorado <= 0)
+                throw new ArgumentException("Faltan los datos del tutor o tutorado.");
 
-            if (comentario.Texto.Length < 10)
-                throw new ArgumentException("El comentario debe tener al menos 10 caracteres.");
+            // Insertar en la base de datos y devolver el ID generado
+            int idComentario = await _tutoradoRepository.CrearComentarioAsync(comentario);
 
-            if (comentario.Texto.Length > 500)
-                throw new ArgumentException("El comentario no puede exceder los 500 caracteres.");
+            if (idComentario <= 0)
+                throw new Exception("No se pudo crear el comentario correctamente.");
 
-            // ✅ Inserta el comentario (no devuelve datos)
-            await _tutoradoRepository.CrearComentarioAsync(comentario);
-
-            // ✅ Retorna un mensaje simple
-            return "Comentario creado correctamente.";
+            return idComentario;
         }
 
 
@@ -397,6 +456,77 @@ namespace EduConnect_API.Services
         //        return false;
         //    }
         //}
+        public async Task<bool> EnviarCorreoAdvertenciaCalificacionBajaAsync(int idComentario)
+        {
+            try
+            {
+                // 1️⃣ Obtener los datos del comentario (tutor, tutorado, calificación, texto)
+                var datos = await _tutoradoRepository.ObtenerDatosComentarioAsync(idComentario);
+                if (datos == null)
+                    return false;
+
+                if (datos.Calificacion > 2)
+                    return false; // solo enviamos si la calificación es 2 o menor
+
+                // 2️⃣ Cargar plantilla y reemplazar variables
+                string plantilla = CorreoManejoPlantillasUtility.CargarPlantilla("AdvertenciaCalificacionBaja.cshtml");
+                string cuerpo = CorreoManejoPlantillasUtility.ReemplazarVariables(plantilla, new Dictionary<string, string>
+        {
+            { "NombreTutor", datos.NombreTutor },
+            { "NombreTutorado", datos.NombreTutorado },
+            { "Calificacion", datos.Calificacion.ToString() },
+            { "Comentario", datos.Texto },
+            { "AñoActual", DateTime.Now.Year.ToString() }
+        });
+
+                // 3️⃣ Crear mensaje MIME
+                var mensaje = new MimeMessage();
+                mensaje.From.Add(new MailboxAddress(_config.DisplayName, _config.Email));
+                mensaje.To.Add(MailboxAddress.Parse(datos.CorreoTutor));
+                mensaje.Subject = "⚠️ Alerta: Calificación baja recibida de un tutorado";
+
+                var builder = new BodyBuilder();
+
+                // 4️⃣ Agregar imagen embebida (logo)
+                var rutaLogo = Path.Combine(Directory.GetCurrentDirectory(), "Utilities", "PlantillasCorreo", "img", "Logo.png");
+                if (File.Exists(rutaLogo))
+                {
+                    var logo = builder.LinkedResources.Add(rutaLogo);
+                    logo.ContentId = "logoEduConnect";
+                }
+                // Ícono de alerta
+                var rutaIcono = Path.Combine(Directory.GetCurrentDirectory(), "Utilities", "PlantillasCorreo", "img", "alerta.png");
+                if (File.Exists(rutaIcono))
+                {
+                    var icono = builder.LinkedResources.Add(rutaIcono);
+                    icono.ContentId = "iconoAlerta";
+                }
+
+                builder.HtmlBody = cuerpo;
+                mensaje.Body = builder.ToMessageBody();
+
+                // 5️⃣ Enviar correo
+                using var smtp = new MailKit.Net.Smtp.SmtpClient();
+
+                _logger.LogInformation($"📡 Conectando al servidor SMTP {_config.Host}:{_config.Port}...");
+
+                await smtp.ConnectAsync(_config.Host, _config.Port, SecureSocketOptions.StartTls);
+                await smtp.AuthenticateAsync(_config.Email, _config.Password);
+                await smtp.SendAsync(mensaje);
+                await smtp.DisconnectAsync(true);
+
+                _logger.LogInformation($"📨 Correo de advertencia enviado correctamente a {datos.CorreoTutor}.");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error al enviar correo de advertencia: {ex.Message}");
+                return false;
+            }
+        }
+
+
 
 
     }

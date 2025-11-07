@@ -21,10 +21,10 @@ namespace EduConnect_API.Repositories.Interfaces
         Task<IEnumerable<RankingTutorDto>> ObtenerRankingTutores();
         Task<PerfilTutorDto> ObtenerPerfilTutorAsync(int idTutor);
         Task<ObtenerUsuarioDto?> ObtenerTutoradoPorId(int idTutorado);
-        Task CrearComentarioAsync(CrearComentarioDto comentario);
+        Task<int> CrearComentarioAsync(CrearComentarioDto comentario);
 
         Task<DatosCorreoTutoriaDto?> ObtenerDatosTutoriaAsync(int idTutoria);
-
-        
+        Task<ComentarioAdvertenciaDto> ObtenerDatosComentarioAsync(int idComentario);
+        //Task<bool> EnviarCorreoAdvertenciaCalificacionBajaAsync(int idComentario)
     }
 }

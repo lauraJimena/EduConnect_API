@@ -8,6 +8,7 @@
         public DateTime Fecha { get; set; }
         public string Hora { get; set; } = string.Empty;
         public string Tema { get; set; } = string.Empty;
+        public string Comentario{ get; set; } = string.Empty;
         public int IdEstado { get; set; }
         //public int IdModalidad { get; set; }
         public string Estado { get; set; } = string.Empty;

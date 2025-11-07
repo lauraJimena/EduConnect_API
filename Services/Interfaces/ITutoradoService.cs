@@ -19,7 +19,9 @@ namespace EduConnect_API.Services.Interfaces
         
         Task<PerfilTutorDto> ObtenerPerfilTutorAsync(int idTutor);
         Task<ObtenerUsuarioDto> ObtenerTutoradoPorIdAsync(int idTutorado);
-        Task <string>CrearComentarioAsync(CrearComentarioDto dto);
+        //Task <string>CrearComentarioAsync(CrearComentarioDto dto);
+        Task<int> CrearComentarioAsync(CrearComentarioDto comentario);
         Task<bool> EnviarCorreoConfirmacionTutoriaAsync(int idTutoria);
+        Task<bool> EnviarCorreoAdvertenciaCalificacionBajaAsync(int idComentario);
     }
 }

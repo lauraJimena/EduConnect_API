@@ -12,6 +12,14 @@ namespace EduConnect_API.Services.Interfaces
         Task<ReporteDemandaAcademicaDto> ObtenerReporteDemandaAcademicaAsync();
         Task<(ReporteGestionAdministrativaDto Totales, List<ReporteDesempenoTutorDto> Desempeno)>
           ObtenerReporteCombinadoAsync();
+        Task<int> ActualizarEstadoComentario(int idComentario);
+
+        //Task<IEnumerable<ListaComentariosDto>> ObtenerComentarios();
+        Task<IEnumerable<ListaComentariosDto>> ObtenerComentariosAsync(
+    string? carrera = null,
+    int? semestre = null,
+    string? materia = null,
+    List<int>? estados = null);
 
     }
 
