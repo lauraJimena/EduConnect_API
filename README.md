@@ -37,6 +37,13 @@ El servicio expone una **API REST** para la gestión de usuarios (tutores, tutor
 - CORS.
 - Inyección de dependencias (DI).
 
+<br><img width="100" height="100" alt="image" src="https://github.com/user-attachments/assets/eaa9dab5-ffce-4411-a9f4-a43d99bd2c99" />
+<img width="120" height="120" alt="image" src="https://github.com/user-attachments/assets/deca1c6f-28cc-4375-8e09-a0cf3239657d" />
+<img width="95" height="95" alt="image" src="https://github.com/user-attachments/assets/3d236a0e-e9be-419e-9051-1e5b26e4373f" />
+
+
+
+
 <h2><b>Requisitos previos</b></h2>
 
 - .NET SDK 8.0
