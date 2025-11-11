@@ -1,8 +1,7 @@
 namespace EduConnect_API.Dtos
 {
-    public class UsuarioDto
+    public class CrearUsuarioDto
     {
-        public int IdUsu { get; set; }
         public string Nombre { get; set; }=string.Empty;
         public string Apellido { get; set; } = string.Empty;    
         public string Correo { get; set; } = string.Empty;
@@ -16,8 +15,6 @@ namespace EduConnect_API.Dtos
         public int IdSemestre { get; set; }
         public int IdRol { get; set; }
         public int IdEstado { get; set; }
-        public string Carrera { get; set; } = string.Empty; 
-
 
     }
 }
