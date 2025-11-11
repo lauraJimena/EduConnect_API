@@ -145,8 +145,8 @@ Laura Jimena Herreño Rubiano
 Andrés Mateo Morales Gonzalez
 Juan Sebastián Moreno
 Edwin Felipe Garavito Izquierdo
-Estudiantes de Ingeniería de Sistemas – Universidad de Cundinamarca
-📧<a href="mailto:notificaciones.educonnect@gmail.com">notificaciones.educonnect@gmail.com
+Estudiantes de Ingeniería de Sistemas – Universidad de Cundinamarca.
+<br>Correo: 📧<a href="mailto:notificaciones.educonnect@gmail.com">notificaciones.educonnect@gmail.com
 </a>
 
 <h2><b>Licencia</b></h2>
