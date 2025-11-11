@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="1280" height="333" alt="Logo" src="https://github.com/user-attachments/assets/5c0861de-90c4-4e83-9aec-47a9f76a6961" />
+  <img width="970" height="270" alt="Logo" src="https://github.com/user-attachments/assets/5c0861de-90c4-4e83-9aec-47a9f76a6961" />
 </p>
 
 <h1 align="center"><b>EDUCONNECT API</b></h1>
@@ -141,11 +141,11 @@ https://localhost:7003/swagger
 
 <h2><b>Autoría</b></h2>
 
-Laura Jimena Herreño Rubiano
-Andrés Mateo Morales Gonzalez
-Juan Sebastián Moreno
-Edwin Felipe Garavito Izquierdo
-Estudiantes de Ingeniería de Sistemas – Universidad de Cundinamarca.
+- Laura Jimena Herreño Rubiano
+- Andrés Mateo Morales Gonzalez
+- Juan Sebastián Moreno
+- Edwin Felipe Garavito Izquierdo
+<br>Estudiantes de Ingeniería de Sistemas – Universidad de Cundinamarca.
 <br>Correo: 📧<a href="mailto:notificaciones.educonnect@gmail.com">notificaciones.educonnect@gmail.com
 </a>
 
