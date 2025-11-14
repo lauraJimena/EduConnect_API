@@ -48,13 +48,16 @@ namespace EduConnect_API.Repositories
         }
         public async Task<ObtenerUsuarioDto> IniciarSesion(IniciarSesionDto usuario)
         {
-            const string sql = @"SELECT 
-                        u.id_usu AS IdUsuario,
-                        u.id_estado, u.id_rol,
-                        u.contras_usu AS ContrasenaHash
-                    FROM [EduConnect].[dbo].[usuario] AS u WHERE 
-                        u.num_ident = @num_ident 
-                        AND u.id_estado = 1";
+            const string sql = @"
+                            SELECT 
+                                u.id_usu AS IdUsu,
+                                u.id_estado AS IdEstado,
+                                u.id_rol AS IdRol,
+                                u.contras_usu AS ContrasenaHash, 
+                                u.cambiar_contras AS DebeActualizarPassword
+                            FROM [EduConnect].[dbo].[usuario] AS u
+                            WHERE u.num_ident = @num_ident 
+                              AND u.id_estado = 1";
 
             using var connection = _dbContextUtility.GetOpenConnection();
             using var command = new SqlCommand(sql, connection);
@@ -64,23 +67,17 @@ namespace EduConnect_API.Repositories
             using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
-                return new ObtenerUsuarioDto
+                var dto = new ObtenerUsuarioDto
                 {
-                    IdUsu = reader.GetInt32(0),
-                    //Nombre = reader.GetString(1),
-                    //Apellido = reader.GetString(2),
-                    //NumIdent = reader.GetString(3),
-                    //Correo = reader.GetString(4),
-                    //Rol = reader.GetString(5),
-                    //Estado = reader.GetString(6),
-                    //Carrera = reader.GetString(7),
-                    //IdRol= reader.GetByte(8), 
-                    IdEstado = reader.GetByte(1),
-                    IdRol= reader.GetByte(2),
-                    ContrasenaHash = reader.GetString(3)
-
-
+                    IdUsu = Convert.ToInt32(reader["IdUsu"]),
+                    IdEstado = Convert.ToInt32(reader["IdEstado"]),
+                    IdRol = Convert.ToInt32(reader["IdRol"]),
+                    ContrasenaHash = reader["ContrasenaHash"].ToString(),
+                    DebeActualizarPassword = reader["DebeActualizarPassword"] != DBNull.Value
+                    && Convert.ToBoolean(reader["DebeActualizarPassword"])
                 };
+
+                return dto;
             }
 
             return null;
@@ -183,6 +180,163 @@ namespace EduConnect_API.Repositories
             var result = await command.ExecuteScalarAsync();
             return Convert.ToInt32(result) > 0;
         }
+        public async Task<int> ActualizarDebeActualizarPassword(int idUsuario, bool valor)
+        {
+            const string sql = @"
+                                UPDATE [EduConnect].[dbo].[usuario]
+                                SET cambiar_contras = @valor
+                                WHERE id_usu = @id_usu";
+
+            try
+            {
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue("@id_usu", idUsuario);
+                command.Parameters.AddWithValue("@valor", valor);
+
+                return await command.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al actualizar el estado de cambio de contraseña: " + ex.Message);
+            }
+        }
+        public async Task<int> ActualizarPassword(int idUsuario, string nuevaPassword)
+        {
+            const string sql = @"
+                                UPDATE [EduConnect].[dbo].[usuario]
+                                SET contras_usu= @nuevaPassword,
+                                    cambiar_contras = 0
+                                WHERE id_usu = @id_usu";
+
+            try
+            {
+                using var connection = _dbContextUtility.GetOpenConnection();
+                using var command = new SqlCommand(sql, connection);
+
+                command.Parameters.AddWithValue("@id_usu", idUsuario);
+                command.Parameters.AddWithValue("@nuevaPassword", nuevaPassword);
+
+                return await command.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al actualizar la contraseña del usuario: " + ex.Message);
+            }
+        }
+        public async Task<string?> ObtenerPasswordActualAsync(int idUsuario)
+        {
+            const string sql = "SELECT contras_usu FROM [EduConnect].[dbo].[usuario] WHERE id_usu = @id_usu";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@id_usu", idUsuario);
+
+            var result = await command.ExecuteScalarAsync();
+            return result == DBNull.Value ? null : result?.ToString();
+        }
+        public async Task<UsuarioPorCorreoDto?> ObtenerUsuarioPorCorreoAsync(string correo)
+        {
+            const string sql = @"
+        SELECT 
+            id_usu AS IdUsu,
+            nom_usu AS Nombre,
+            apel_usu AS Apellido,
+            correo_usu AS Correo
+        FROM [EduConnect].[dbo].[usuario]
+        WHERE correo_usu = @correo";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@correo", correo);
+
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new UsuarioPorCorreoDto
+                {
+                    IdUsu = Convert.ToInt32(reader["IdUsu"]),
+                    Nombre = reader["Nombre"].ToString()!,
+                    Apellido = reader["Apellido"].ToString()!,
+                    Correo = reader["Correo"].ToString()!
+                };
+            }
+
+            return null;
+        }
+        public async Task GuardarTokenRecuperacionAsync(string correo, string token)
+        {
+            const string sql = @"
+        INSERT INTO [EduConnect].[dbo].[recuperar_password]
+            (correo, token, fecha_creacion, fecha_expira, usado)
+        VALUES
+            (@correo, @token, GETDATE(), DATEADD(MINUTE, 30, GETDATE()), 0)";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@correo", correo);
+            command.Parameters.AddWithValue("@token", token);
+
+            await command.ExecuteNonQueryAsync();
+        }
+
+        public async Task<TokenRecuperacionDto?> ObtenerTokenRecuperacionAsync(string token)
+        {
+            const string sql = @"
+        SELECT TOP 1 
+            correo,
+            fecha_expira AS FechaExpira,
+            usado AS Usado
+        FROM [EduConnect].[dbo].[recuperar_password]
+        WHERE token = @token";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@token", token);
+
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new TokenRecuperacionDto
+                {
+                    Correo = reader["correo"].ToString()!,
+                    FechaExpira = Convert.ToDateTime(reader["FechaExpira"]),
+                    Usado = Convert.ToBoolean(reader["Usado"])
+                };
+            }
+
+            return null;
+        }
+
+        public async Task ActualizarPasswordPorCorreo(string correo, string nuevaPasswordHash)
+        {
+            const string sql = @"UPDATE [EduConnect].[dbo].[usuario]
+                         SET contras_usu = @contras_usu
+                         WHERE correo_usu = @correo";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@correo", correo);
+            command.Parameters.AddWithValue("@contras_usu", nuevaPasswordHash);
+
+            await command.ExecuteNonQueryAsync();
+        }
+
+        public async Task MarcarTokenUsado(string token)
+        {
+            const string sql = @"UPDATE [EduConnect].[dbo].[recuperar_password] 
+                         SET usado = 1 
+                         WHERE token = @token";
+
+            using var connection = _dbContextUtility.GetOpenConnection();
+            using var command = new SqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@token", token);
+
+            await command.ExecuteNonQueryAsync();
+        }
+
+
 
     }
 }
