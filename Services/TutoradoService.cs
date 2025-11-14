@@ -348,7 +348,7 @@ namespace EduConnect_API.Services
                 var mensaje = new MimeMessage();
                 mensaje.From.Add(new MailboxAddress(_config.DisplayName, _config.Email));
                 mensaje.To.Add(MailboxAddress.Parse(datos.CorreoTutorado));
-                mensaje.Subject = $"Confirmación de Tutoría - {datos.Materia}";
+                mensaje.Subject = $"Solicitud de Tutoría - {datos.Materia}";
 
                 // ✅ Usar un solo BodyBuilder
                 var builder = new BodyBuilder();

@@ -1,6 +1,7 @@
 ﻿using EduConnect_API.Dtos;
 using EduConnect_API.Services;
 using EduConnect_API.Services.Interfaces;
+using EduConnect_API.Utilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -101,5 +102,71 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        [HttpPost("ActualizarPassword")]
+        public async Task<IActionResult> ActualizarPassword([FromBody] ActualizarPasswordDto dto)
+        {
+            try
+            {
+                // Validar parámetros básicos
+                if (dto == null || dto.IdUsuario <= 0)
+                    return BadRequest(new { mensaje = "El ID de usuario es obligatorio." });
+
+                if (string.IsNullOrWhiteSpace(dto.NuevaPassword))
+                    return BadRequest(new { mensaje = "Debe proporcionar una nueva contraseña." });
+
+                // Ejecutar la lógica en el service
+                var resultado = await _generalService.ActualizarPasswordAsync(dto.IdUsuario, dto.NuevaPassword);
+
+                if (resultado > 0)
+                    return Ok(new { mensaje = "Contraseña actualizada correctamente." });
+
+                // Si no se afectó ninguna fila, devolver un error genérico
+                return BadRequest(new { mensaje = "No se pudo actualizar la contraseña. Verifique los datos enviados." });
+            }
+            catch (Exception ex)
+            {
+                // Manejo de errores controlado
+                return StatusCode(500, new { mensaje = "Error interno: " + ex.Message });
+            }
+        }
+        [HttpPost("EnviarCorreoRecuperacion")]
+        public async Task<IActionResult> EnviarCorreoRecuperacion([FromQuery] string correo)
+        {
+            try
+            {
+                var resultado = await _generalService.EnviarCorreoRecuperacionAsync(correo);
+
+                if (resultado)
+                    return Ok("✅ Se ha enviado el enlace de recuperación al correo indicado.");
+                else
+                    return BadRequest("❌ No se pudo enviar el correo. Verifique el correo ingresado.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error interno: {ex.Message}");
+            }
+        }
+
+        [HttpPost("RestablecerContrasena")]
+        public async Task<IActionResult> RestablecerContrasena([FromBody] RestablecerContrasenaDto dto)
+        {   
+            try
+            {
+                var (ok, msg) = await _generalService.RestablecerContrasenaAsync(dto);
+
+                if (ok)
+                    return Ok(new { mensaje = msg });
+
+                return BadRequest(new { mensaje = msg });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Error interno: " + ex.Message });
+            }
+        }
+
+
+
+
     }
 }

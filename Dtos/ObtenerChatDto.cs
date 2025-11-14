@@ -7,5 +7,6 @@
         public DateTime FechaCreacion { get; set; }
         public string NombreReceptor  { get; set; } = string.Empty;
         public string NombreMateria { get; set; } = string.Empty;
+        public bool TieneMensajesNoLeidos { get; set; }
     }
 }

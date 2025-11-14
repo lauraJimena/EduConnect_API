@@ -2,6 +2,8 @@
 using EduConnect_API.Repositories;
 using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Services.Interfaces;
+using EduConnect_API.Utilities;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace EduConnect_API.Services
@@ -9,10 +11,15 @@ namespace EduConnect_API.Services
     public class AdministradorService : IAdministradorService
     {
         private readonly IAdministradorRepository _administradorRepository;
+        private readonly IGeneralRepository _generalRepository;
+        private readonly BcryptHasherUtility _hasher;
+      
 
-        public AdministradorService(IAdministradorRepository administradorRepository)
+        public AdministradorService(IAdministradorRepository administradorRepository, IGeneralRepository generalRepository, BcryptHasherUtility hasher)
         {
             _administradorRepository = administradorRepository;
+            _generalRepository = generalRepository;
+            _hasher = hasher;
         }
 
         public async Task RegistrarUsuario(CrearUsuarioDto usuario)
@@ -54,6 +61,9 @@ namespace EduConnect_API.Services
             else if (!Regex.IsMatch(usuario.ContrasUsu, @"^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{7,}$"))
                 throw new Exception("La contraseña debe tener al menos 7 caracteres, incluir una mayúscula, un número y un carácter especial.");
 
+            // Hashear la contraseña antes de guardarla
+            usuario.ContrasUsu = _hasher.Hash(usuario.ContrasUsu);
+
             //Validaciones de llaves foráneas
             if (usuario.IdCarrera <= 0)
                 throw new Exception("Debe seleccionar una carrera válida.");
@@ -64,24 +74,21 @@ namespace EduConnect_API.Services
             if (usuario.IdRol <= 0)
                 throw new Exception("Debe asignar un rol válido.");
 
+            usuario.DebeActualizarPassword = true;
+
+            if (await _generalRepository.ExisteNumeroIdentificacion(usuario.NumIdent))
+                throw new Exception("Ya existe un usuario registrado con este número de identificación.");
+
+
+            if (await _generalRepository.ExisteCorreo(usuario.Correo))
+                throw new Exception("Ya existe un usuario registrado con este correo electrónico.");
             var result = await _administradorRepository.RegistrarUsuario(usuario);
 
             if (result <= 0)
                 throw new Exception("No se pudo registrar el usuario en la base de datos.");
         }
-        //public async Task<IEnumerable<ObtenerUsuarioDto>> ObtenerUsuarios()
-        //{
-        //    var usuarios = await _administradorRepository.ObtenerUsuarios();
+       
 
-
-        //    if (usuarios == null || !usuarios.Any())
-        //    {
-        //        // En vez de devolver null, lanza excepción controlada
-        //        throw new Exception("No se encontraron usuarios en la base de datos.");
-        //    }
-
-        //    return usuarios;
-        //}
         public async Task<IEnumerable<ObtenerUsuarioDto>> ObtenerUsuariosAsync(int? idRol = null, int? idEstado = null, string? numIdent = null)
         {
             return await _administradorRepository.ObtenerUsuarios(idRol, idEstado, numIdent);
