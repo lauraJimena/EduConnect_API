@@ -19,9 +19,9 @@ namespace EduConnect_API.Repositories
         {
             const string sql = @"
                 INSERT INTO [EduConnect].[dbo].[usuario] 
-                (nom_usu, apel_usu, id_tipo_ident, num_ident, correo_usu, tel_usu, contras_usu, id_carrera, id_semestre, id_rol, id_estado) 
+                (nom_usu, apel_usu, id_tipo_ident, num_ident, correo_usu, tel_usu, contras_usu, id_carrera, id_semestre, id_rol, id_estado, cambiar_contras) 
                 VALUES (@nom_usu, @apel_usu, @id_tipo_ident, @num_ident, @correo_usu, 
-                @tel_usu, @contras_usu, @id_carrera, @id_semestre, @id_rol, @id_estado)";
+                @tel_usu, @contras_usu, @id_carrera, @id_semestre, @id_rol, @id_estado, @cambiar_contras)";
 
             try
             {
@@ -39,6 +39,7 @@ namespace EduConnect_API.Repositories
                 command.Parameters.AddWithValue("@id_semestre", usuario.IdSemestre);
                 command.Parameters.AddWithValue("@id_rol", usuario.IdRol);
                 command.Parameters.AddWithValue("@id_estado", 1); // Estado activo por defecto
+                command.Parameters.AddWithValue("@cambiar_contras", true);
 
 
                 return await command.ExecuteNonQueryAsync();

@@ -151,7 +151,7 @@ ORDER BY COUNT(*) DESC;
             (SELECT COUNT(*) FROM tutoria WHERE id_modalidad = 1) AS Presenciales;
 
         SELECT 
-            u.nom_usu AS NombreTutor,
+            CONCAT(u.nom_usu, ' ', u.apel_usu) AS NombreTutor,
             u.correo_usu AS CorreoTutor,
             COUNT(t.id_tutoria) AS TotalSolicitudes,
             SUM(CASE WHEN t.id_estado = 3 THEN 1 ELSE 0 END) AS Aceptadas,
@@ -159,7 +159,7 @@ ORDER BY COUNT(*) DESC;
             SUM(CASE WHEN t.id_estado = 5 THEN 1 ELSE 0 END) AS Rechazadas
         FROM tutoria t
         INNER JOIN usuario u ON t.id_tutor = u.id_usu
-        GROUP BY u.nom_usu, u.correo_usu
+        GROUP BY u.nom_usu, u.correo_usu, apel_usu
         ORDER BY TotalSolicitudes DESC;
     ";
 

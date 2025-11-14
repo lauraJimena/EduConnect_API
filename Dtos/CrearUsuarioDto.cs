@@ -15,6 +15,7 @@ namespace EduConnect_API.Dtos
         public int IdSemestre { get; set; }
         public int IdRol { get; set; }
         public int IdEstado { get; set; }
+        public bool DebeActualizarPassword { get; set; }
 
     }
 }

@@ -1,4 +1,4 @@
-using EduConnect_API.Dtos;
+锘縰sing EduConnect_API.Dtos;
 using EduConnect_API.Repositories;
 using EduConnect_API.Repositories.Interfaces;
 using EduConnect_API.Services;
@@ -7,9 +7,12 @@ using EduConnect_API.Utilities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+
 
 var builder = WebApplication.CreateBuilder(args);
-// Configuraci髇 de JwtSettings
+// Configuraci贸n de JwtSettings
 var bindJwtSettings = new JwtSettingsDto();
 builder.Configuration.Bind("JsonWebTokenKeys", bindJwtSettings);
 builder.Services.AddSingleton(bindJwtSettings);
@@ -67,10 +70,8 @@ builder.Services.AddScoped<ITutorRepository, TutorRepository>();
 builder.Services.AddScoped<ITutorService, TutorService>();
 builder.Services.AddScoped<IChatsService, ChatsService>();
 builder.Services.AddScoped<IChatsRepository, ChatsRepository>();
-
-
-
 builder.Services.AddScoped<DbContextUtility>();
+
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -79,18 +80,18 @@ builder.Services.AddSwaggerGen(options =>
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Version = "v1",
-        Title = "API - Sistema de Tutor韆s Acad閙icas UdeC - EDUCONNECT",
-        Description = "Esta API forma parte del sistema de tutor韆s acad閙icas entre estudiantes de la Universidad de Cundinamarca. "
-                + "Proporciona servicios REST para la gesti髇 de usuarios, tutor韆s, autenticaci髇 JWT y comunicaci髇 entre tutores y tutorados. "
-                + "\n\n**Caracter韘ticas principales:**\n"
-                + "- Autenticaci髇 y autorizaci髇 mediante JWT.\n"
-                + "- Gesti髇 de usuarios (tutores, tutorados, coordinadores, administradores).\n"
-                + "- Registro y consulta de tutor韆s.\n"
-                + "- Chat interno y seguimiento del proceso acad閙ico.\n"
-                + "- Integraci髇 con base de datos SQL Server.\n\n",               
+        Title = "API - Sistema de Tutor铆as Acad茅micas UdeC - EDUCONNECT",
+        Description = "Esta API forma parte del sistema de tutor铆as acad茅micas entre estudiantes de la Universidad de Cundinamarca. "
+                + "Proporciona servicios REST para la gesti贸n de usuarios, tutor铆as, autenticaci贸n JWT y comunicaci贸n entre tutores y tutorados. "
+                + "\n\n**Caracter铆sticas principales:**\n"
+                + "- Autenticaci贸n y autorizaci贸n mediante JWT.\n"
+                + "- Gesti贸n de usuarios (tutores, tutorados, coordinadores, administradores).\n"
+                + "- Registro y consulta de tutor铆as.\n"
+                + "- Chat interno y seguimiento del proceso acad茅mico.\n"
+                + "- Integraci贸n con base de datos SQL Server.\n\n",               
         Contact = new OpenApiContact
         {
-            Name = "Desarrollado por estudiantes de Ingenier韆 de Sistemas - Universidad de Cundinamarca",
+            Name = "Desarrollado por estudiantes de Ingenier铆a de Sistemas - Universidad de Cundinamarca",
             Url = new Uri("https://www.ucundinamarca.edu.co")
           
         },
@@ -102,13 +103,13 @@ builder.Services.AddSwaggerGen(options =>
     });
 
 
-    //// Esta l韓ea permite que Swagger lea los comentarios XML
+    //// Esta l铆nea permite que Swagger lea los comentarios XML
     var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Ingrese su token JWT v醠ido en el campo de autorizaci髇.\r\nEjemplo: \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\".",
+        Description = "Ingrese su token JWT v谩lido en el campo de autorizaci贸n.\r\nEjemplo: \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\".",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
@@ -132,6 +133,19 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// CONFIGURACI脫N DE CORS SOLO PARA EL FRONT .NET
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .WithOrigins("https://localhost:7270")  // URL del front .NET Core
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
 
 var app = builder.Build();
 
@@ -143,8 +157,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
+
 
 app.UseAuthorization();
 

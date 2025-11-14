@@ -8,5 +8,6 @@
         public string Mensaje { get; set; } = string.Empty;
         public string Token { get; set; } = string.Empty;
         public DateTime TiempoExpiracion { get; set; }
+        public bool DebeActualizarPassword { get; set; }
     }
 }

@@ -11,6 +11,16 @@ namespace EduConnect_API.Repositories.Interfaces
 
         Task<bool> ExisteNumeroIdentificacion(string numIdent);
         Task<bool> ExisteCorreo(string correo);
+        Task<int> ActualizarDebeActualizarPassword(int idUsuario, bool valor);
+        Task<int> ActualizarPassword(int idUsuario, string nuevaPassword);
+        Task<string> ObtenerPasswordActualAsync(int idUsuario);
+       
+       
+        Task<UsuarioPorCorreoDto?> ObtenerUsuarioPorCorreoAsync(string correo);
+        Task GuardarTokenRecuperacionAsync(string correo, string token);
 
+        Task<TokenRecuperacionDto?> ObtenerTokenRecuperacionAsync(string token);
+        Task ActualizarPasswordPorCorreo(string correo, string nuevaPasswordHash);
+        Task MarcarTokenUsado(string token);
     }
 }

@@ -38,7 +38,7 @@ namespace EduConnect_API.Dtos
         public byte? IdSemestre { get; set; }
         public int? IdCarrera { get; set; }
         public string? Avatar { get; set; } // Ruta o nombre de imagen
-        //public string Carrera { get; set; } = string.Empty; 
+        public bool DebeActualizarPassword { get; set; }
 
 
 

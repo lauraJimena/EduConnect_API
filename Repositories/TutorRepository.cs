@@ -164,7 +164,7 @@ WHERE id_usu = @id_usu";
         public async Task<IEnumerable<SolicitudTutorDto>> ObtenerSolicitudesTutor(FiltroSolicitudesTutorDto filtro)
         {
             var sql = @"
-         SELECT 
+     SELECT 
      t.id_tutoria AS IdTutoria,
      CONCAT(u.nom_usu, ' ', u.apel_usu) AS NombreTutorado,
      m.nom_materia AS Materia,
@@ -226,16 +226,20 @@ WHERE id_usu = @id_usu";
                     Fecha = reader.GetDateTime(reader.GetOrdinal("Fecha")),
                     Hora = reader.GetString(reader.GetOrdinal("Hora")),
                     Tema = reader.GetString(reader.GetOrdinal("Tema")),
-                    Comentario = reader.GetString(reader.GetOrdinal("Comentario")),
+
+                    // ✅ Evita el error si el comentario está en NULL
+                    Comentario = reader.IsDBNull(reader.GetOrdinal("Comentario"))
+                        ? string.Empty
+                        : reader.GetString(reader.GetOrdinal("Comentario")),
+
                     IdEstado = Convert.ToInt32(reader["IdEstado"]),
                     Estado = reader.GetString(reader.GetOrdinal("Estado")),
-                    // Si quieres mostrar la modalidad en el front
                     Modalidad = reader.GetString(reader.GetOrdinal("Modalidad")),
                     IdModalidad = reader.GetByte(reader.GetOrdinal("IdModalidad")),
-
                 };
                 lista.Add(dto);
             }
+
 
             return lista;
         }
