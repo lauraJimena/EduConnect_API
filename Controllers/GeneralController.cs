@@ -24,13 +24,42 @@ namespace EduConnect_API.Controllers
         {
             try
             {
-                await _generalService.RegistrarUsuario(usuario);
+                int idGenerado = await _generalService.RegistrarUsuario(usuario);
 
-                return Ok("Usuario registrado con éxito");
+                var response = new
+                {
+                    ok = true,
+                    msg = "Usuario registrado con éxito",
+                    idUsu = idGenerado
+                };
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "Error interno: " + ex.Message);
+                return StatusCode(500, new
+                {
+                    ok = false,
+                    msg = "Error interno: " + ex.Message
+                });
+            }
+        }
+
+        [HttpPost("EnviarBienvenida")]
+        public async Task<IActionResult> EnviarCorreoBienvenida([FromQuery] int idUsu)
+        {
+            try
+            {
+                var resultado = await _generalService.EnviarCorreoBienvenidaAsync(idUsu);
+
+                if (resultado)
+                    return Ok("✅ Correo enviado correctamente.");
+                else
+                    return BadRequest("❌ No se pudo enviar el correo.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error en el servidor: {ex.Message}");
             }
         }
         /// <summary>
@@ -52,6 +81,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Obtiene todas las carreras de la base de datos
+        /// </summary>
         [HttpGet("ObtenerCarreras")]
         public async Task<ActionResult> ObtenerCarreras()
         {

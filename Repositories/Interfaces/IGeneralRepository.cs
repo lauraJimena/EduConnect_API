@@ -22,5 +22,6 @@ namespace EduConnect_API.Repositories.Interfaces
         Task<TokenRecuperacionDto?> ObtenerTokenRecuperacionAsync(string token);
         Task ActualizarPasswordPorCorreo(string correo, string nuevaPasswordHash);
         Task MarcarTokenUsado(string token);
+        Task<DatosBienvenidaDto?> ObtenerDatosBienvenidaAsync(int idUsu);
     }
 }

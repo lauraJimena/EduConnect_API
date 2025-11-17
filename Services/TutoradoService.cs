@@ -21,12 +21,17 @@ namespace EduConnect_API.Services
         private readonly ITutoradoRepository _tutoradoRepository;
         private readonly CorreoConfigUtility _config;
         private readonly ILogger _logger;
+        private readonly IWebHostEnvironment _env;
+        private readonly CorreoManejoPlantillasUtility _plantillas;
 
-        public TutoradoService(ITutoradoRepository tutoradoRepository, IConfiguration config, ILogger<TutoradoService> logger)
+        public TutoradoService(IWebHostEnvironment env,
+            CorreoManejoPlantillasUtility plantillas, ITutoradoRepository tutoradoRepository, IConfiguration config, ILogger<TutoradoService> logger)
         {
             _tutoradoRepository = tutoradoRepository;
             _logger = logger;
             _config = config.GetSection("CorreoConfigUtility").Get<CorreoConfigUtility>()!;
+            _env = env;
+            _plantillas = plantillas;
         }
 
         public Task<IEnumerable<HistorialTutoriaDto>> ObtenerHistorialAsync(int idTutorado, List<int>? idsEstado)
@@ -127,66 +132,6 @@ namespace EduConnect_API.Services
         {
             return await _tutoradoRepository.ObtenerEstadosSolicitud();
         }
-        //public async Task<int> CrearSolicitudTutoria(SolicitudTutoriaRequestDto solicitud)
-        //{
-        //    // Validaciones básicas
-        //    if (solicitud.IdTutorado <= 0)
-        //        throw new ArgumentException("El ID del tutorado es obligatorio.");
-
-        //    if (solicitud.IdTutor <= 0)
-        //        throw new ArgumentException("El ID del tutor es obligatorio.");
-
-        //    if (solicitud.IdMateria <= 0)
-        //        throw new ArgumentException("El ID de la materia es obligatorio.");
-
-        //    if (solicitud.IdModalidad <= 0)
-        //        throw new ArgumentException("El ID de la modalidad es obligatorio.");
-
-        //    // Validar que el tutorado existe y es tutorado
-        //    if (!await _tutoradoRepository.ExisteUsuario(solicitud.IdTutorado))
-        //        throw new ArgumentException("El tutorado no existe.");
-
-        //    int rolUsuario = await _tutoradoRepository.ObtenerRolUsuario(solicitud.IdTutorado);
-        //    if (rolUsuario != 1)
-        //        throw new ArgumentException("El usuario no tiene permisos de tutorado.");
-
-        //    // Validar que el tutor existe y es tutor
-        //    if (!await _tutoradoRepository.ExisteTutor(solicitud.IdTutor))
-        //        throw new ArgumentException("El tutor no existe o no tiene permisos de tutor.");
-
-        //    // Validar que la materia existe
-        //    if (!await _tutoradoRepository.ExisteMateria(solicitud.IdMateria))
-        //        throw new ArgumentException("La materia no existe.");
-
-        //    // Validar que la modalidad existe
-        //    if (!await _tutoradoRepository.ExisteModalidad(solicitud.IdModalidad))
-        //        throw new ArgumentException("La modalidad no existe.");
-
-        //    // Validar fecha (no puede ser en el pasado)
-        //    if (solicitud.Fecha < DateTime.Today)
-        //        throw new ArgumentException("La fecha no puede ser en el pasado.");
-
-        //    // Validar formato de hora
-        //    if (string.IsNullOrWhiteSpace(solicitud.Hora))
-        //        throw new ArgumentException("La hora es obligatoria.");
-
-        //    // Validar que la hora tenga formato correcto (HH:mm)
-        //    if (!TimeSpan.TryParse(solicitud.Hora, out TimeSpan hora))
-        //        throw new ArgumentException("El formato de la hora no es válido. Use formato HH:mm (ej: 14:30).");
-
-        //    // Validar tema (obligatorio)
-        //    if (string.IsNullOrWhiteSpace(solicitud.Tema))
-        //        throw new ArgumentException("El tema es obligatorio.");
-
-        //    if (solicitud.Tema.Length < 5)
-        //        throw new ArgumentException("El tema debe tener al menos 5 caracteres.");
-
-        //    // Validar comentario adicional (opcional pero si existe, validar longitud)
-        //    if (!string.IsNullOrWhiteSpace(solicitud.ComentarioAdicional) && solicitud.ComentarioAdicional.Length > 500)
-        //        throw new ArgumentException("El comentario adicional no puede exceder los 500 caracteres.");
-
-        //    return await _tutoradoRepository.CrearSolicitudTutoria(solicitud);
-        //}
         public async Task<int> CrearSolicitudTutoria(SolicitudTutoriaRequestDto solicitud)
         {
             try
@@ -332,9 +277,11 @@ namespace EduConnect_API.Services
                 if (datos == null)
                     return false;
 
-                // 1️⃣ Cargar plantilla y reemplazar variables
-                string plantilla = CorreoManejoPlantillasUtility.CargarPlantilla("ConfirmacionTutoria.cshtml");
-                string cuerpo = CorreoManejoPlantillasUtility.ReemplazarVariables(plantilla, new Dictionary<string, string>
+                
+                string plantilla = _plantillas.CargarPlantilla("ConfirmacionTutoria.cshtml");
+
+
+                string cuerpo = _plantillas.ReemplazarVariables(plantilla, new Dictionary<string, string>
         {
             { "NombreTutorado", datos.NombreTutorado },
             { "NombreTutor", datos.NombreTutor },
@@ -344,24 +291,25 @@ namespace EduConnect_API.Services
             { "AñoActual", DateTime.Now.Year.ToString() }
         });
 
-                // 2️⃣ Crear mensaje MIME
+        
                 var mensaje = new MimeMessage();
                 mensaje.From.Add(new MailboxAddress(_config.DisplayName, _config.Email));
                 mensaje.To.Add(MailboxAddress.Parse(datos.CorreoTutorado));
                 mensaje.Subject = $"Solicitud de Tutoría - {datos.Materia}";
 
-                // ✅ Usar un solo BodyBuilder
+                
                 var builder = new BodyBuilder();
 
-                // ✅ Agregar imagen embebida
-                var rutaLogo = Path.Combine(Directory.GetCurrentDirectory(), "Utilities", "PlantillasCorreo", "img", "Logo.png");
+                //Agregar imagen embebida
+               
+                var rutaLogo = Path.Combine(_env.ContentRootPath, "Utilities", "PlantillasCorreo", "img", "Logo.png");
                 if (File.Exists(rutaLogo))
                 {
                     var logo = builder.LinkedResources.Add(rutaLogo);
                     logo.ContentId = "logoEduConnect"; // debe coincidir con el cid: del HTML
                 }
-                // ✅ Nueva imagen (saludar)
-                var rutaSaludar = Path.Combine(Directory.GetCurrentDirectory(), "Utilities", "PlantillasCorreo", "img", "Saludar.png");
+               
+                var rutaSaludar = Path.Combine(_env.ContentRootPath, "Utilities", "PlantillasCorreo", "img", "Saludar.png");
                 if (File.Exists(rutaSaludar))
                 {
                     var saludarImg = builder.LinkedResources.Add(rutaSaludar);
@@ -371,7 +319,6 @@ namespace EduConnect_API.Services
                 builder.HtmlBody = cuerpo;
                 mensaje.Body = builder.ToMessageBody();
 
-                // 3️⃣ Enviar correo con MailKit
                 using var smtp = new MailKit.Net.Smtp.SmtpClient();
 
                 _logger.LogInformation($"📡 Iniciando conexión SMTP a {_config.Host}:{_config.Port}...");
@@ -397,65 +344,6 @@ namespace EduConnect_API.Services
             }
         }
 
-        //public async Task<bool> EnviarCorreoConfirmacionTutoriaAsync(int idTutoria)
-        //{
-        //    try
-        //    {
-        //        var datos = await _tutoradoRepository.ObtenerDatosTutoriaAsync(idTutoria);
-        //        if (datos == null)
-        //            return false;
-
-        //        // 1️⃣ Cargar plantilla y reemplazar variables
-        //        string plantilla = CorreoManejoPlantillasUtility.CargarPlantilla("ConfirmacionTutoria.cshtml");
-        //        string cuerpo = CorreoManejoPlantillasUtility.ReemplazarVariables(plantilla, new Dictionary<string, string>
-        //{
-        //    { "NombreTutorado", datos.NombreTutorado },
-        //    { "NombreTutor", datos.NombreTutor },
-        //    { "Materia", datos.Materia },
-        //    { "Fecha", datos.Fecha.ToString("dd/MM/yyyy") },
-        //    { "Hora", datos.Hora },
-        //    { "AñoActual", DateTime.Now.Year.ToString() }
-        //});
-
-        //        // 2Crear mensaje MIME
-        //        var mensaje = new MimeMessage();
-        //        mensaje.From.Add(new MailboxAddress(_config.DisplayName, _config.Email));
-        //        mensaje.To.Add(MailboxAddress.Parse(datos.CorreoTutorado));
-        //        mensaje.Subject = $"Confirmación de Tutoría - {datos.Materia}";
-        //        mensaje.Body = new BodyBuilder { HtmlBody = cuerpo }.ToMessageBody();
-        //        var builder = new BodyBuilder();
-
-        //        // Agregar imagen embebida
-        //        var rutaLogo = Path.Combine(Directory.GetCurrentDirectory(), "Utilities", "PlantillasCorreo", "img", "Logo.png");
-        //        var logo = builder.LinkedResources.Add(rutaLogo);
-        //        logo.ContentId = "logoEduConnect"; // 🔗 Debe coincidir con el "cid:" en el HTML
-
-        //        builder.HtmlBody = cuerpo;
-        //        // 3️⃣ Enviar correo con MailKit
-        //        using var smtp = new MailKit.Net.Smtp.SmtpClient();
-
-        //        _logger.LogInformation($"📡 Iniciando conexión SMTP a {_config.Host}:{_config.Port}...");
-
-        //        await smtp.ConnectAsync(_config.Host, _config.Port, SecureSocketOptions.StartTls);
-        //        _logger.LogInformation("✅ Conexión SMTP establecida correctamente.");
-
-        //        await smtp.AuthenticateAsync(_config.Email, _config.Password);
-        //        _logger.LogInformation("🔐 Autenticación exitosa.");
-
-        //        await smtp.SendAsync(mensaje);
-        //        _logger.LogInformation($"📨 Correo enviado correctamente a {datos.CorreoTutorado}.");
-
-        //        await smtp.DisconnectAsync(true);
-        //        _logger.LogInformation("🔌 Desconectado de SMTP.");
-
-        //        return true;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError($"Error al enviar correo: {ex.Message}");
-        //        return false;
-        //    }
-        //}
         public async Task<bool> EnviarCorreoAdvertenciaCalificacionBajaAsync(int idComentario)
         {
             try
@@ -468,9 +356,10 @@ namespace EduConnect_API.Services
                 if (datos.Calificacion > 2)
                     return false; // solo enviamos si la calificación es 2 o menor
 
-                // 2️⃣ Cargar plantilla y reemplazar variables
-                string plantilla = CorreoManejoPlantillasUtility.CargarPlantilla("AdvertenciaCalificacionBaja.cshtml");
-                string cuerpo = CorreoManejoPlantillasUtility.ReemplazarVariables(plantilla, new Dictionary<string, string>
+               
+                
+                string plantilla = _plantillas.CargarPlantilla("AdvertenciaCalificacionBaja.cshtml");
+                string cuerpo = _plantillas.ReemplazarVariables(plantilla, new Dictionary<string, string>
         {
             { "NombreTutor", datos.NombreTutor },
             { "NombreTutorado", datos.NombreTutorado },
@@ -487,15 +376,16 @@ namespace EduConnect_API.Services
 
                 var builder = new BodyBuilder();
 
-                // 4️⃣ Agregar imagen embebida (logo)
-                var rutaLogo = Path.Combine(Directory.GetCurrentDirectory(), "Utilities", "PlantillasCorreo", "img", "Logo.png");
+               
+                var rutaLogo = Path.Combine(_env.ContentRootPath, "Utilities", "PlantillasCorreo", "img", "Logo.png");
+               
                 if (File.Exists(rutaLogo))
                 {
                     var logo = builder.LinkedResources.Add(rutaLogo);
                     logo.ContentId = "logoEduConnect";
                 }
                 // Ícono de alerta
-                var rutaIcono = Path.Combine(Directory.GetCurrentDirectory(), "Utilities", "PlantillasCorreo", "img", "alerta.png");
+                var rutaIcono = Path.Combine(_env.ContentRootPath, "Utilities", "PlantillasCorreo", "img", "alerta.png");
                 if (File.Exists(rutaIcono))
                 {
                     var icono = builder.LinkedResources.Add(rutaIcono);

@@ -1,28 +1,9 @@
-﻿@{
-    Layout = null;
-}
+﻿
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Restablecer tu contraseña - EduConnect</title>
+    <meta charset="UTF-8" />
     <style>
-        body {
-            font-family: Montserrat, sans-serif;
-            background-color: #f5f8fa;
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            background-color: #ffffff;
-            max-width: 600px;
-            margin: 30px auto;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 10px 40px;
-        }
-
         header {
             text-align: center;
             margin-bottom: 20px;
@@ -30,37 +11,25 @@
             border-radius: 15px;
             padding: 10px;
         }
-
-            header img {
-                height: 100px;
+            table{
+            background-color: #f2f5f3;
+            }
+            table p{
+                font-weight: 550;
+                font-size:18px;
+                 font-family: Montserrat, sans-serif;
+                 text-align: justify;
             }
         h2 {
-            font-family: Montserrat, sans-serif;
-            color: #1c4e80;
-            text-align: center;
-            margin-bottom: 10px;
-            font-size: 34px;
-        }
-        p {
-            font-family: Montserrat, sans-serif;
-            line-height: 1.6;
-            font-size: 16px;
-            font-weight: 550;
-        }
-        .btn {
-            display: inline-block;
-            background-color: #1c4e80;
-            color: #fff !important;
-            text-decoration: none;
-            padding: 12px 25px;
-            border-radius: 18px;
-            font-weight: 600;
-            margin-top: 20px;
-            font-size: 20px;
+            color: #1c3c50;
+            text-shadow: 3px 3px black;
+            text-shadow: -1px -1px 0 #333, 1px -1px 0 #333, -1px 1px 0 #333, 1px 1px 0 #333, /* Sombra suave */
+            4px 3px 0px #1e5778;           
+            font-size: 3em;
             font-family: Montserrat, sans-serif;
         }
-
         .pie-pagina {
+            font-family: Montserrat, sans-serif;
             background-color: #7ec0e0;
             padding: 20px;
             color: #333;
@@ -125,26 +94,35 @@
         .contenedor-footer > * {
             flex: 1;
         }
+
     </style>
 </head>
-<body>
+<body style="font-family: Arial; color: #333;">
     <header>
         <img src="cid:logoEduConnect" alt="EduConnect Logo" style="width: 300px; height: auto;" />
-        <h2>Restablecer tu contraseña</h2>
+        <h2>¡Bienvenido/a, {{Nombre}}!</h2>
 
     </header>
-    <div class="container">
-        
-        <p>Hola <strong>{{NombreUsuario}}</strong>,</p>
-        <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en <strong>EduConnect</strong>.</p>
-        <p>Si fuiste tú quien solicitó el cambio, haz clic en el siguiente botón para establecer una nueva contraseña:</p>
 
-        <div style="text-align: center;">
-            <a href="{{Enlace}}" class="btn">Restablecer Contraseña</a>
-        </div>
 
-        <p>Si no realizaste esta solicitud, puedes ignorar este mensaje. Tu cuenta permanecerá segura.</p>
-    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;">
+        <tr>
+            <!-- COLUMNA IZQUIERDA (TEXTO) -->
+            <td style="width:60%; padding:20px; vertical-align:central;">
+                <p>Tu cuenta en <strong>EduConnect</strong> ha sido creada exitosamente.</p>
+
+                <p>Ahora puedes iniciar sesión y comenzar a usar la plataforma para gestionar tutorías y comunicarte con tus tutores.</p>
+
+                <p style="font-weight: 550;">¡Gracias por usar <strong>EduConnect</strong>!</p>
+            </td>
+
+            <!-- COLUMNA DERECHA (IMAGEN) -->
+            <td style="width:40%; padding:0px; text-align:center; vertical-align:middle;">
+                <img src="cid:saludar" alt="Imagen saludo" style="width: 100%; max-width:600px; border-radius:10px;" />
+            </td>
+        </tr>
+    </table>
+
     <footer class="pie-pagina">
         <div class="contenedor-footer">
             <!-- Frase y correo en la misma línea -->
