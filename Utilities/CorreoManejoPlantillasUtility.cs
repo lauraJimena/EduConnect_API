@@ -2,12 +2,19 @@
 {
     public class CorreoManejoPlantillasUtility
     {
-        
+        private readonly IWebHostEnvironment _env;
 
-        public static string CargarPlantilla(string nombreArchivo)
+        public CorreoManejoPlantillasUtility(IWebHostEnvironment env)
         {
-            // ✅ Ajusta la ruta según tu estructura actual
-            string basePath = Path.Combine(Directory.GetCurrentDirectory(), "Utilities", "PlantillasCorreo");
+            _env = env;
+        }
+
+
+        public string CargarPlantilla(string nombreArchivo)
+        {
+            string basePath = Path.Combine(_env.ContentRootPath, "Utilities", "PlantillasCorreo");
+
+
             string ruta = Path.Combine(basePath, nombreArchivo);
 
             if (!File.Exists(ruta))
@@ -16,7 +23,7 @@
             return File.ReadAllText(ruta);
         }
 
-        public static string ReemplazarVariables(string plantilla, Dictionary<string, string> datos)
+        public string ReemplazarVariables(string plantilla, Dictionary<string, string> datos)
         {
             foreach (var kv in datos)
                 plantilla = plantilla.Replace($"{{{{{kv.Key}}}}}", kv.Value);

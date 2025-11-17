@@ -10,6 +10,9 @@ using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
+System.Net.ServicePointManager.SecurityProtocol =
+    System.Net.SecurityProtocolType.Tls12;
+
 
 var builder = WebApplication.CreateBuilder(args);
 // Configuración de JwtSettings
@@ -71,6 +74,8 @@ builder.Services.AddScoped<ITutorService, TutorService>();
 builder.Services.AddScoped<IChatsService, ChatsService>();
 builder.Services.AddScoped<IChatsRepository, ChatsRepository>();
 builder.Services.AddScoped<DbContextUtility>();
+builder.Services.AddSingleton<CorreoManejoPlantillasUtility>();
+
 
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -140,7 +145,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins("https://localhost:7270")  // URL del front .NET Core
+            .WithOrigins("http://localhost:83")  // URL del front .NET Core
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
@@ -149,12 +154,14 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Habilitar Swagger SIEMPRE (también en IIS)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "EduConnect API v1");
+    c.RoutePrefix = "swagger"; // obligatorio para que abra correctamente
+});
+
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
