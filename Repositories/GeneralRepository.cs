@@ -35,39 +35,6 @@ namespace EduConnect_API.Repositories
             };
         }
 
-        //public async Task<int> RegistrarUsuario(CrearUsuarioDto usuario)
-        //{
-        //    const string sql = @"
-        //        INSERT INTO [EduConnect].[dbo].[usuario] 
-        //        (nom_usu, apel_usu, id_tipo_ident, num_ident, correo_usu, tel_usu, contras_usu, id_carrera, id_semestre, id_rol, id_estado) 
-        //        VALUES (@nom_usu, @apel_usu, @id_tipo_ident, @num_ident, @correo_usu, 
-        //        @tel_usu, @contras_usu, @id_carrera, @id_semestre, @id_rol, @id_estado)";
-
-        //    try
-        //    {
-        //        using var connection = _dbContextUtility.GetOpenConnection();
-        //        using var command = new SqlCommand(sql, connection);
-
-        //        command.Parameters.AddWithValue("@nom_usu", usuario.Nombre);
-        //        command.Parameters.AddWithValue("@apel_usu", usuario.Apellido);
-        //        command.Parameters.AddWithValue("@id_tipo_ident", usuario.IdTipoIdent);
-        //        command.Parameters.AddWithValue("@num_ident", usuario.NumIdent);
-        //        command.Parameters.AddWithValue("@correo_usu", usuario.Correo);
-        //        command.Parameters.AddWithValue("@tel_usu", usuario.TelUsu);
-        //        command.Parameters.AddWithValue("@contras_usu", usuario.ContrasUsu);
-        //        command.Parameters.AddWithValue("@id_carrera", usuario.IdCarrera);
-        //        command.Parameters.AddWithValue("@id_semestre", usuario.IdSemestre);
-        //        command.Parameters.AddWithValue("@id_rol", usuario.IdRol);
-        //        command.Parameters.AddWithValue("@id_estado", 1); // Estado activo por defecto
-
-
-        //        return await command.ExecuteNonQueryAsync();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception("Error al registrar el usuario en la base de datos: " + ex.Message);
-        //    }
-        //}
         public async Task<int> RegistrarUsuario(CrearUsuarioDto usuario)
         {
             const string sql = @"
@@ -96,7 +63,6 @@ namespace EduConnect_API.Repositories
                 command.Parameters.AddWithValue("@id_rol", usuario.IdRol);
                 command.Parameters.AddWithValue("@id_estado", 1);
 
-                // 🔥 Obtener el ID insertado
                 object result = await command.ExecuteScalarAsync();
 
                 return Convert.ToInt32(result);

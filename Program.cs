@@ -145,7 +145,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:83")  // URL del front .NET Core
+            .WithOrigins("https://localhost:83")  // URL del front .NET Core            
             .AllowAnyMethod()
             .AllowAnyHeader();
     });

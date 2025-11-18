@@ -30,30 +30,25 @@ namespace EduConnect_API.Controllers
         {
             try
             {
-                await _administradorService.RegistrarUsuario(usuario);
+                int idGenerado = await _administradorService.RegistrarUsuario(usuario);
+                var response = new
+                {
+                    ok = true,
+                    msg = "Usuario registrado con éxito",
+                    idUsu = idGenerado
+                };
 
-                return Ok("Usuario registrado con éxito");
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "Error interno: " + ex.Message);
+                return StatusCode(500, new
+                {
+                    ok = false,
+                    msg = "Error interno: " + ex.Message
+                });
             }
         }
-        //[HttpGet("ConsultarUsuarios")]
-        //public async Task<ActionResult<IEnumerable<ObtenerUsuarioDto>>> ObtenerUsuarios()
-        //{
-        //    try
-        //    {
-
-        //        var usuarios = await _administradorService.ObtenerUsuarios();
-
-        //        return Ok(usuarios);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, "Error interno: " + ex.Message);
-        //    }
-        //}
         /// <summary>
         /// Obtiene la lista de todos los usuarios registrados en el sistema
         /// </summary>

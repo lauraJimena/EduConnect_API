@@ -22,7 +22,7 @@ namespace EduConnect_API.Services
             _hasher = hasher;
         }
 
-        public async Task RegistrarUsuario(CrearUsuarioDto usuario)
+        public async Task<int> RegistrarUsuario(CrearUsuarioDto usuario)
         {
             //Validaciones básicas obligatorias
             if (string.IsNullOrWhiteSpace(usuario.Nombre))
@@ -43,6 +43,12 @@ namespace EduConnect_API.Services
                 throw new Exception("El correo es obligatorio.");
             else if (!Regex.IsMatch(usuario.Correo, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
                 throw new Exception("El formato del correo no es válido.");
+
+
+            // ❗ Validar que solo sea Gmail
+            if (!usuario.Correo.EndsWith("@gmail.com", StringComparison.OrdinalIgnoreCase))
+                throw new Exception("Solo se permiten correos de Gmail.");
+
             // Validación de número de identificación
             if (string.IsNullOrWhiteSpace(usuario.NumIdent))
                 throw new Exception("El número de identificación es obligatorio.");
@@ -82,10 +88,12 @@ namespace EduConnect_API.Services
 
             if (await _generalRepository.ExisteCorreo(usuario.Correo))
                 throw new Exception("Ya existe un usuario registrado con este correo electrónico.");
-            var result = await _administradorRepository.RegistrarUsuario(usuario);
+            int idNuevoUsuario = await _generalRepository.RegistrarUsuario(usuario);
 
-            if (result <= 0)
+            if (idNuevoUsuario <= 0)
                 throw new Exception("No se pudo registrar el usuario en la base de datos.");
+
+            return idNuevoUsuario;
         }
        
 
