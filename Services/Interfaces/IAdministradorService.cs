@@ -6,7 +6,7 @@ namespace EduConnect_API.Services.Interfaces
     public interface IAdministradorService
     {
         
-        Task RegistrarUsuario(CrearUsuarioDto usuario);
+        Task<int> RegistrarUsuario(CrearUsuarioDto usuario);
         Task<IEnumerable<ObtenerUsuarioDto>> ObtenerUsuariosAsync(int? idRol, int? idEstado, string? numIdent);
         // Consultar por ID
         Task<ObtenerUsuarioDto> ObtenerUsuarioPorId(int idUsuario);

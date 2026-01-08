@@ -22,8 +22,10 @@ namespace EduConnect_API.Controllers
             
         }
 
-        // trae todas las tutorías del tutorado
-        
+        /// <summary>
+        /// Obtiene el historial de tutorías de un tutorado con filtros opcionales
+        /// </summary>
+
         [HttpGet("{idTutorado}/historial")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ObtenerHistorialTutorado(
@@ -33,7 +35,9 @@ namespace EduConnect_API.Controllers
             var datos = await _tutoradoService.ObtenerHistorialAsync(idTutorado, idsEstado);
             return Ok(datos);
         }
-        
+        /// <summary>
+        /// Actualiza el perfil del tutorado
+        /// </summary>
         [HttpPut("ActualizarPerfil")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> ActualizarPerfil([FromBody] EditarPerfilDto perfil)
@@ -56,7 +60,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-        
+        /// <summary>
+        /// Obtiene las solicitudes de tutorías de un tutorado con filtros opcionales
+        /// </summary>
         [HttpPost("SolicitudesTutorias")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<IEnumerable<SolicitudTutoriaDto>>> ObtenerSolicitudesTutorias([FromBody] FiltroSolicitudesDto filtro)
@@ -76,7 +82,9 @@ namespace EduConnect_API.Controllers
             }
         }
 
-       
+        /// <summary>
+        /// Obtiene los estados de las solicitudes de tutorías
+        /// </summary>
         [HttpGet("EstadosSolicitud")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<IEnumerable<EstadoSolicitudDto>>> ObtenerEstadosSolicitud()
@@ -91,31 +99,15 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-        /*[HttpPost("CrearSolicitudTutoria")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<ActionResult> CrearSolicitudTutoria([FromBody] SolicitudTutoriaRequestDto request)
-        {
-            try
-            {
-                var result = await _tutoradoService.CrearSolicitudTutoria(request);
-
-                if (result > 0)
-                    return Ok("Solicitud de tutoría creada con éxito. Estado: Pendiente");
-                else
-                    return BadRequest("No se pudo crear la solicitud de tutoría");
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, "Error interno: " + ex.Message);
-            }
-        }*/
+        /// <summary>
+        /// Limpia los filtros de búsqueda
+        /// </summary>
         private static string? Clean(string? s)
             => string.IsNullOrWhiteSpace(s) || s?.Trim().ToLower() == "string" ? null : s;
 
+        /// <summary>
+        /// Busca turores con filtros 
+        /// </summary>
         [HttpPost("BuscarTutor")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> Obtener([FromBody] BuscarTutorDto filtros)
@@ -129,7 +121,9 @@ namespace EduConnect_API.Controllers
             var resultado = await _tutoradoService.ObtenerTutoresAsync(filtros);
             return Ok(resultado);
         }
-
+        /// <summary>
+        /// Crea una nueva solicitud de tutoría
+        /// </summary>
         [HttpPost("CrearSolicitudTutoria")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> CrearSolicitudTutoria([FromBody] SolicitudTutoriaRequestDto request)
@@ -174,7 +168,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, new { mensaje });
             }
         }
-
+        /// <summary>
+        /// Crea un nuevo comentario para un tutor
+        /// </summary>
         [HttpPost("CrearComentario")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [HttpPost("Comentario")]
@@ -190,23 +186,9 @@ namespace EduConnect_API.Controllers
                 return BadRequest(new { mensaje = ex.Message });
             }
         }
-
-        //public async Task<IActionResult> CrearComentario([FromBody] CrearComentarioDto dto)
-        //{
-        //    try
-        //    {
-        //        var mensaje = await _tutoradoService.CrearComentarioAsync(dto);
-        //        return Ok(new { mensaje });
-        //    }
-        //    catch (ArgumentException ex)
-        //    {
-        //        return BadRequest(new { error = ex.Message });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new { error = "Error interno: " + ex.Message });
-        //    }
-        //}
+        /// <summary>
+        /// Obtiene el ranking de tutores
+        /// </summary>
 
         [HttpGet("RankingTutores")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -222,6 +204,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Obtiene los comentarios de un tutor específico
+        /// </summary>
         [HttpPost("ComentariosTutor")]
         public async Task<ActionResult<IEnumerable<ComentarioTutorInfoDto>>> ObtenerComentariosPorTutor([FromBody] ComentariosTutorRequestDto request)
         {
@@ -239,6 +224,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Obtiene el perfil de un tutor por su ID
+        /// </summary>
         [HttpGet("PerfilTutor/{idTutor}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ObtenerPerfilTutor(int idTutor)
@@ -256,6 +244,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno del servidor: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Obtiene la lista de todos los usuarios registrados en el sistema
+        /// </summary>
         [HttpGet("ObtenerTutoradoPorId/{idUsuario}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ObtenerTutoradoPorId(int idUsuario)
@@ -278,6 +269,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, new { mensaje = "Error interno del servidor: " + ex.Message });
             }
         }
+        /// <summary>
+        /// Envía un correo de confirmación de tutoría
+        /// </summary>
         [HttpPost("EnviarConfirmacionTutoria")]
         public async Task<IActionResult> EnviarConfirmacionTutoria([FromQuery] int idTutoria)
         {
@@ -295,6 +289,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, $"Error en el servidor: {ex.Message}");
             }
         }
+        /// <summary>
+        /// Envía un correo de advertencia por calificación baja
+        /// </summary>
         [HttpPost("EnviarCalificacionBaja")]
         public async Task<IActionResult> EnviarCalificacionBaja([FromQuery] int idComentario)
         {

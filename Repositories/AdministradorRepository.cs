@@ -21,7 +21,9 @@ namespace EduConnect_API.Repositories
                 INSERT INTO [EduConnect].[dbo].[usuario] 
                 (nom_usu, apel_usu, id_tipo_ident, num_ident, correo_usu, tel_usu, contras_usu, id_carrera, id_semestre, id_rol, id_estado, cambiar_contras) 
                 VALUES (@nom_usu, @apel_usu, @id_tipo_ident, @num_ident, @correo_usu, 
-                @tel_usu, @contras_usu, @id_carrera, @id_semestre, @id_rol, @id_estado, @cambiar_contras)";
+                @tel_usu, @contras_usu, @id_carrera, @id_semestre, @id_rol, @id_estado, @cambiar_contras);
+
+                SELECT SCOPE_IDENTITY();";
 
             try
             {
@@ -41,8 +43,9 @@ namespace EduConnect_API.Repositories
                 command.Parameters.AddWithValue("@id_estado", 1); // Estado activo por defecto
                 command.Parameters.AddWithValue("@cambiar_contras", true);
 
+                object result = await command.ExecuteScalarAsync();
 
-                return await command.ExecuteNonQueryAsync();
+                return Convert.ToInt32(result);
             }
             catch (Exception ex)
             {
