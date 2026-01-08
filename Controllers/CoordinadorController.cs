@@ -18,6 +18,9 @@ namespace EduConnect_API.Controllers
             _logger = logger;
             _coordinadorService = coordinadorService;
         }
+        /// <summary>
+        /// Consulta tutorías con filtros opcionales
+        /// </summary>
         [HttpGet("ConsultarTutorias")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<IEnumerable<TutoriaConsultaDto>>> ConsultarTutorias(
@@ -42,6 +45,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, $"Error interno: {ex.Message}");
             }
         }
+        /// <summary>
+        /// Genera el reporte de demanda académica
+        /// </summary>
         [HttpGet("ReporteDemandaAcademica")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<ReporteDemandaAcademicaDto>> ObtenerReporteDemandaAcademica()
@@ -60,6 +66,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, $"Error al generar el reporte: {ex.Message}");
             }
         }
+        /// <summary>
+        /// Genera el reporte combinado de totales y desempeño
+        /// </summary>
         [HttpGet("ReporteCombinado")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ObtenerReporteCombinado()

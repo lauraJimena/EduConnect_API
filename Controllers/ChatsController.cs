@@ -17,6 +17,9 @@ namespace EduConnect_API.Controllers
             _logger = logger;
             _chatsService = chatsService;
         }
+        /// <summary>
+        /// Crear un nuevo chat
+        /// </summary>
         [HttpPost("CrearChat")]
         public async Task<ActionResult> CrearChat([FromBody] CrearChatDto chat)
         {
@@ -30,6 +33,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Crear un nuevo mensaje en un chat
+        /// </summary>
         [HttpPost("CrearMensaje")]
         public async Task<ActionResult> CrearMensaje([FromBody] CrearMensajeDto mensaje)
         {
@@ -43,6 +49,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Obtener chats por usuario
+        /// </summary>
         [HttpGet("ObtenerChatsPorUsuario")]
         public async Task<ActionResult> ObtenerChatsPorUsuario(int usuarioId)
         {
@@ -56,6 +65,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Obtiene los mensajes de un chat específico
+        /// </summary>
 
         [HttpGet("ObtenerMensajes")]
         public async Task<ActionResult> ObtenerMensajes(int chatId)

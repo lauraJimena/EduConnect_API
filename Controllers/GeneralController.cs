@@ -19,6 +19,9 @@ namespace EduConnect_API.Controllers
             _logger = logger;
             _generalService = generalService;
         }
+        /// <summary>
+        /// Registra un nuevo usuario en el sistema.
+        /// </summary>
         [HttpPost("RegistrarUsuario")]
         public async Task<ActionResult> RegistrarUsuario([FromBody] CrearUsuarioDto usuario)
         {
@@ -44,7 +47,9 @@ namespace EduConnect_API.Controllers
                 });
             }
         }
-
+        /// <summary>
+        /// Envía un correo de bienvenida a un nuevo usuario.
+        /// </summary>
         [HttpPost("EnviarBienvenida")]
         public async Task<IActionResult> EnviarCorreoBienvenida([FromQuery] int idUsu)
         {
@@ -109,6 +114,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Obtiene todos los tipos de identificación de la base de datos
+        /// </summary>
         [HttpGet("ObtenerTiposIdent")]
         public async Task<ActionResult> ObtenerTipoIdent()
         {
@@ -134,6 +142,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Actualiza la contraseña de un usuario.
+        /// </summary>
         [HttpPost("ActualizarPassword")]
         public async Task<IActionResult> ActualizarPassword([FromBody] ActualizarPasswordDto dto)
         {
@@ -161,6 +172,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, new { mensaje = "Error interno: " + ex.Message });
             }
         }
+        /// <summary>
+        /// Envía un correo de recuperación de contraseña al usuario.
+        /// </summary>
         [HttpPost("EnviarCorreoRecuperacion")]
         public async Task<IActionResult> EnviarCorreoRecuperacion([FromQuery] string correo)
         {
@@ -178,7 +192,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, $"Error interno: {ex.Message}");
             }
         }
-
+        /// <summary>
+        /// Restablece la contraseña de un usuario.
+        /// </summary>
         [HttpPost("RestablecerContrasena")]
         public async Task<IActionResult> RestablecerContrasena([FromBody] RestablecerContrasenaDto dto)
         {   

@@ -14,7 +14,9 @@ namespace EduConnect_API.Controllers
         private readonly ITutorService _tutorService;
         public TutorController(ITutorService service) => _tutorService = service;
 
-
+        /// <summary>
+        /// Obtiene el historial de tutorías de un tutor, filtrado por múltiples estados.
+        /// </summary>
         // Trae historial del tutor filtrado por múltiples estados
         [HttpGet("{idTutor}/historial/")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -34,7 +36,9 @@ namespace EduConnect_API.Controllers
         private static string? Clean(string? s)
             => string.IsNullOrWhiteSpace(s) || s?.Trim().ToLower() == "string" ? null : s;
 
-        
+        /// <summary>
+        /// Actualiza el perfil del tutor.
+        /// </summary>
         [HttpPut("ActualizarPerfil")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> ActualizarPerfil([FromBody] EditarPerfilDto perfil)
@@ -57,6 +61,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Obtiene las solicitudes de tutorías para un tutor según los filtros proporcionados.
+        /// </summary>
         [HttpPost("SolicitudesTutorias")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<IEnumerable<SolicitudTutorDto>>> ObtenerSolicitudesTutorias([FromBody] FiltroSolicitudesTutorDto filtro)
@@ -75,7 +82,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-
+        /// <summary>
+        /// Acepta una solicitud de tutoría.
+        /// </summary>
         // ACEPTAR solicitud - SOLO id_tutoria
         [HttpPut("AceptarSolicitudTutoria")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -99,7 +108,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-
+        /// <summary>
+        /// Rechaza una solicitud de tutoría.
+        /// </summary>
         // RECHAZAR solicitud - SOLO id_tutoria
         [HttpPut("RechazarSolicitudTutoria")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -123,7 +134,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-
+        /// <summary>
+        /// Obtiene el detalle de una solicitud de tutoría específica.
+        /// </summary>
         // DETALLE de solicitud - SOLO id_tutoria en la ruta
         [HttpGet("DetalleSolicitud/{idTutoria}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -143,7 +156,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-
+        /// <summary>
+        /// Obtiene las materias asociadas a un tutor específico.
+        /// </summary>
         // MATERIAS para filtros
         [HttpGet("MateriasTutor/{idTutor}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -163,20 +178,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-        // 🔹 Buscar materias por filtros (nombre, semestre, carrera)
-        //[HttpPost("BuscarMaterias")]
-        //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        //public async Task<IActionResult> BuscarMaterias([FromBody] FiltrosMateriaDto filtros)
-        //{
-        //    filtros.MateriaNombre = Clean(filtros.MateriaNombre);
-        //    filtros.Semestre = Clean(filtros.Semestre);
-        //    filtros.CarreraNombre = Clean(filtros.CarreraNombre);
-
-        //    var resultado = await _tutorService.BuscarMateriasAsync(filtros);
-        //    return Ok(resultado);
-        //}
-
-        // 🔹 Listar las materias ya asignadas al tutor
+        /// <summary>
+        /// Obtiene las materias asignadas a un usuario tutor.
+        /// </summary>
         [HttpGet("ObtenerAsignadas")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ObtenerAsignadas(int idUsuario)
@@ -185,7 +189,9 @@ namespace EduConnect_API.Controllers
             return Ok(resultado);
         }
 
-        // 🔹 Guardar selección (máximo 5 materias)
+        /// <summary>
+        /// Selecciona y guarda una materia para un tutor.
+        /// </summary>
         [HttpPost("SeleccionarGuardarMateria")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> SeleccionarGuardarMateria([FromBody] SeleccionarGuardarMateriaDto dto)
@@ -195,6 +201,9 @@ namespace EduConnect_API.Controllers
             var resultado = await _tutorService.SeleccionarYGuardarAsync(dto);
             return Ok(resultado);
         }
+        /// <summary>
+        /// Obtiene los comentarios realizados a un tutor según los filtros proporcionados.
+        /// </summary>
         [HttpPost("Comentarios")]
         public async Task<ActionResult<IEnumerable<ComentarioTutorDto>>> ObtenerComentariosTutor([FromBody] FiltroComentariosTutorDto filtro)
         {
@@ -212,6 +221,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Obtiene la información de un tutor por su ID de usuario.
+        /// </summary>
         [HttpGet("ObtenerTutorPorId/{idUsuario}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ObtenerTutoradoPorId(int idUsuario)
@@ -234,6 +246,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, new { mensaje = "Error interno del servidor: " + ex.Message });
             }
         }
+        /// <summary>
+        /// Valida si un tutor tiene materias registradas.
+        /// </summary>
         [HttpGet("ValidarMaterias/{idTutor}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ValidarMateriasTutor(int idTutor)
@@ -255,7 +270,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, new { error = "Error interno al validar materias: " + ex.Message });
             }
         }
-        // GET: Tutor/RegistrarMaterias
+        /// <summary>
+        /// Obtiene las materias asociadas a un tutor específico.
+        /// </summary>
         [HttpGet("MateriasPorTutor/{idTutor}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ObtenerMateriasPorTutor(int idTutor)
@@ -278,6 +295,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, new { error = "Error interno: " + ex.Message });
             }
         }
+        /// <summary>
+        /// Registra las materias seleccionadas para un tutor.
+        /// </summary>
         [HttpPost("RegistrarMaterias")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> RegistrarMaterias([FromBody] RegistrarMateriasTutorDto dto)

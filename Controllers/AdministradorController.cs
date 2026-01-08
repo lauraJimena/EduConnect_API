@@ -66,7 +66,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-
+        /// <summary>
+        /// Obtiene el usuario por ID   
+        /// </summary>
         //Obtener usuario por ID    
         [HttpGet("ObtenerUsuarioPorId/{idUsuario}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -86,7 +88,9 @@ namespace EduConnect_API.Controllers
                 return BadRequest(new { mensaje = ex.Message });
             }
         }
-
+        /// <summary>
+        /// Obtiene la lista de todos los usuarios registrados en el sistema
+        /// </summary>
         [HttpPut("ActualizarUsuario")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> ActualizarUsuario([FromBody] ActualizarUsuarioDto usuario)
@@ -109,6 +113,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Elimina un usuario por su ID (inactivación lógica)
+        /// </summary>
         [HttpDelete("EliminarUsuario/{id}")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> EliminarUsuario(int id)
@@ -131,6 +138,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Obtiene la lista de todas las materias registradas en el sistema
+        /// </summary>
         [HttpGet("ConsultarMaterias")]
         public async Task<ActionResult<IEnumerable<MateriaDto>>> ObtenerTodasMaterias()
         {
@@ -144,6 +154,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Obtiene una materia por su ID
+        /// </summary>
 
         // CONSULTAR: Obtener materia por ID - CORREGIDO
         [HttpGet("ObtenerMateriaPorId/{id}")]
@@ -163,7 +176,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-
+        /// <summary>
+        /// Crea una nueva materia
+        /// </summary>
         // CREAR: Crear nueva materia
         [HttpPost("CrearMateria")]
         public async Task<ActionResult> CrearMateria([FromBody] CrearMateriaDto materia)
@@ -186,6 +201,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Actualiza una materia existente
+        /// </summary>
 
         // ACTUALIZAR: Actualizar materia existente
         [HttpPut("ActualizarMateria")]
@@ -209,7 +227,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-
+        /// <summary>
+        /// Elimina (inactiva) una materia por su ID
+        /// </summary>
         // ELIMINAR: Inactivar materia - CORREGIDO
         [HttpPut("Materia/{id}/Inactivar")]
         public async Task<ActionResult> InactivarMateria(int id)
@@ -232,7 +252,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
-
+         /// <summary>
+        /// Activa una materia por su ID
+        /// </summary>
         // ACTIVAR: Activar materia - CORREGIDO
         [HttpPut("Materia/{id}/Activar")]
         public async Task<ActionResult> ActivarMateria(int id)
@@ -255,6 +277,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Obtiene el reporte de tutores
+        /// </summary>
         [HttpGet("ReporteTutores")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<IEnumerable<ReporteTutorDto>>> ObtenerReporteTutores()
@@ -269,6 +294,9 @@ namespace EduConnect_API.Controllers
                 return StatusCode(500, "Error interno: " + ex.Message);
             }
         }
+        /// <summary>
+        /// Obtiene el reporte de tutorados activos
+        /// </summary>
         [HttpGet("ReporteTutoradosActivos")]
         
         [CustomAuthorize(3)]
